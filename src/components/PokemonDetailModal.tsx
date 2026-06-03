@@ -183,7 +183,7 @@ export const PokemonDetailModal: React.FC<Props> = ({ pokemon, onSave, onClose }
 
 
         <datalist id="all-moves-list">
-          {movesData.map(m => <option key={m.name} value={m.name} />)}
+          {movesData.map(m => <option key={m.name} value={`${m.name} - ${m.type}`} />)}
         </datalist>
         <div className="p-4 bg-slate-50 border-t">
           <button 
