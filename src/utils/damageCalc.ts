@@ -130,8 +130,28 @@ export const calculateDamage = (
   let minDamage = Math.floor(Math.floor(Math.floor(baseDamage * stab) * effectiveness * 0.85) * weatherBonus * itemMultiplier);
   let maxDamage = Math.floor(Math.floor(Math.floor(baseDamage * stab) * effectiveness * 1.00) * weatherBonus * itemMultiplier);
 
-  // 防御側のアイテム補正（きあいのタスキ）
+  // 防御側のアイテム補正（きあいのタスキ、半減の実など）
   let itemNote = undefined;
+  
+  // 半減の実
+  const damageHalvingBerries: Record<string, string> = {
+    "オッカのみ": "ほのお", "イトケのみ": "みず", "ソクノのみ": "でんき", "リンドのみ": "くさ",
+    "ヤチェのみ": "こおり", "ヨプのみ": "かくとう", "ビアーのみ": "どく", "シュカのみ": "じめん",
+    "バコウのみ": "ひこう", "ウタンのみ": "エスパー", "タンガのみ": "むし", "ヨロギのみ": "いわ",
+    "カシブのみ": "ゴースト", "ハバンのみ": "ドラゴン", "ナモのみ": "あく", "リリバのみ": "はがね",
+    "ロゼルのみ": "フェアリー"
+  };
+  
+  if (damageHalvingBerries[defenderItem] === moveType && effectiveness > 1) {
+    minDamage = Math.floor(minDamage / 2);
+    maxDamage = Math.floor(maxDamage / 2);
+    itemNote = "半減の実";
+  } else if (defenderItem === "ホズのみ" && moveType === "ノーマル") {
+    minDamage = Math.floor(minDamage / 2);
+    maxDamage = Math.floor(maxDamage / 2);
+    itemNote = "半減の実";
+  }
+
   if (defenderItem === "きあいのタスキ" && maxDamage >= targetMaxHp) {
     itemNote = "タスキ";
     if (minDamage >= targetMaxHp) minDamage = targetMaxHp - 1;

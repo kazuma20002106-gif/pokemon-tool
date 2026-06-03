@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import svData from './data/sv.json';
 import championsData from './data/champions.json';
-import { Search, ChevronUp, ChevronDown, Minus, User, Swords, Trash2, Plus, Gamepad2, Settings2, Sun, CloudRain, Wind, Snowflake, Info } from 'lucide-react';
+import { Search, ChevronUp, ChevronDown, Minus, User, Swords, Trash2, Plus, Gamepad2, Settings2, Sun, CloudRain, Wind, Snowflake, Info, Zap } from 'lucide-react';
 import { PokemonDetailModal, Pokemon, MyPokemon, NATURES } from './components/PokemonDetailModal';
 import { getWeaknesses } from './utils/typeChart';
 import { applyStatRank } from './utils/statsCalc';
@@ -219,6 +219,11 @@ const App: React.FC = () => {
       </div>
     );
   };
+
+  const isMega = opponent?.name.startsWith('メガ');
+  const baseName = isMega ? opponent!.name.replace(/^メガ/, '').replace(/[XY]$/, '') : opponent?.name;
+  const basePokemon = isMega ? pokemonData.find(p => p.name === baseName) : opponent;
+  const megaEvolutions = basePokemon ? pokemonData.filter(p => p.name.startsWith(`メガ${basePokemon.name}`)) : [];
 
   return (
     <div className="min-h-screen bg-slate-50 pb-28 font-sans text-slate-800">
@@ -458,9 +463,31 @@ const App: React.FC = () => {
                     />
                     <div>
                       <h3 className="font-black text-lg text-slate-800">{opponent.name}</h3>
-                      <div className="flex gap-1 mt-1">
+                      <div className="flex gap-1 mt-1 mb-2">
                         {opponent.types.map(t => <TypeBadge key={t} type={t} />)}
                       </div>
+                      {/* メガシンカ切り替えボタン */}
+                      {megaEvolutions.length > 0 && (
+                        <div className="flex gap-2">
+                          {!isMega ? megaEvolutions.map(mega => (
+                            <button
+                              key={mega.id}
+                              onClick={() => { setOpponent(mega); setOppActiveAbility(mega.abilities[0] || ''); }}
+                              className="px-2 py-1 bg-gradient-to-r from-slate-700 to-slate-900 text-white text-[10px] font-bold rounded shadow-sm hover:from-slate-600 hover:to-slate-800 flex items-center"
+                            >
+                              <Zap className="w-3 h-3 mr-1 text-yellow-400" />
+                              {mega.name.replace('メガ' + basePokemon?.name, 'メガ')}
+                            </button>
+                          )) : basePokemon && (
+                            <button
+                              onClick={() => { setOpponent(basePokemon); setOppActiveAbility(basePokemon.abilities[0] || ''); }}
+                              className="px-2 py-1 bg-slate-200 text-slate-600 text-[10px] font-bold rounded shadow-sm hover:bg-slate-300 flex items-center"
+                            >
+                              元の姿に戻す
+                            </button>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                   {/* 相手の特性 (複数ある場合は選択) */}
