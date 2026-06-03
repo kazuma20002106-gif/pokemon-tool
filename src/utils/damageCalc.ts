@@ -10,6 +10,7 @@ export interface DamageResult {
   effectiveness: number;
   weatherBonus: number;
   immunityReason?: string;
+  itemNote?: string;
 }
 
 export const getEffectiveness = (moveType: string, targetTypes: string[]): number => {
@@ -34,13 +35,18 @@ export const calculateDamage = (
   targetMaxHp: number,
   attackerAbility: string = "",
   defenderAbilities: string[] = [],
-  weather: string = "none"
+  weather: string = "none",
+  attackerItem: string = "なし",
+  defenderItem: string = "なし"
 ): DamageResult => {
   // 特性による威力補正
   let finalPower = power;
   if (attackerAbility === "テクニシャン" && power <= 60) {
     finalPower = Math.floor(power * 1.5);
   }
+  
+  // アイテムによる威力補正 (ちからのハチマキ・ものしりメガネ・パンチグローブ等はMVPスコープ外なら一旦保留でもOKだが、ここで汎用的に扱ってもよい)
+  // 今回は最終ダメージに補正をかける「いのちのたま」「たつじんのおび」を処理する
 
   // 基本ダメージ: ((2 * L / 5 + 2) * Power * A / D) / 50 + 2
   const baseDamage = Math.floor(Math.floor(Math.floor((2 * level) / 5 + 2) * finalPower * attackStat / defenseStat) / 50) + 2;
@@ -82,46 +88,78 @@ export const calculateDamage = (
     if (moveType === "ほのお") weatherBonus = 0.5;
   }
 
-  // Modifier = STAB * Effectiveness * Weather
-  const modifier = immunityReason ? 0 : (stab * effectiveness * weatherBonus);
+  if (immunityReason) {
+    return {
+      minDamage: 0,
+      maxDamage: 0,
+      minPercent: 0,
+      maxPercent: 0,
+      hitsToKO: "無効",
+      stabBonus: stab,
+      effectiveness: 0,
+      weatherBonus,
+      immunityReason
+    };
+  }
 
-  // 乱数 (0.85 ~ 1.0)
-  const minDamage = Math.floor(Math.floor(baseDamage * modifier) * 0.85);
-  const maxDamage = Math.floor(Math.floor(baseDamage * modifier) * 1.00);
+  // 最終補正 (いのちのたま、たつじんのおび等)
+  let itemMultiplier = 1.0;
+  if (attackerItem === "いのちのたま") {
+    itemMultiplier = 1.3;
+  } else if (attackerItem === "たつじんのおび" && effectiveness > 1) {
+    itemMultiplier = 1.2;
+  }
 
-  const minPercent = (minDamage / targetMaxHp) * 100;
-  const maxPercent = (maxDamage / targetMaxHp) * 100;
+  // もくたん・しんぴのしずく等のタイプ強化 (1.2倍)
+  const typeBoostingItems: Record<string, string> = {
+    "もくたん": "ほのお", "しんぴのしずく": "みず", "じしゃく": "でんき", "きせきのタネ": "くさ",
+    "とけないこおり": "こおり", "くろおび": "かくとう", "どくバリ": "どく", "やわらかいすな": "じめん",
+    "するどいくちばし": "ひこう", "まがったスプーン": "エスパー", "ぎんのこな": "むし",
+    "かたいいし": "いわ", "のろいのおふだ": "ゴースト", "りゅうのキバ": "ドラゴン",
+    "くろいメガネ": "あく", "メタルコート": "はがね", "ようせいのはね": "フェアリー",
+    "シルクのスカーフ": "ノーマル", "ノーマルジュエル": "ノーマル"
+  };
+  if (typeBoostingItems[attackerItem] === moveType) {
+    if (attackerItem === "ノーマルジュエル") {
+      itemMultiplier *= 1.3;
+    } else {
+      itemMultiplier *= 1.2;
+    }
+  }
 
-  // 確定数 (例: 確定1発, 乱数2発など)
-  let hitsToKO = "";
-  if (minPercent >= 100) {
-    hitsToKO = "確定1発";
-  } else if (maxPercent >= 100) {
-    // Calculate chance
-    // This is a simplified chance based on 16 possible random rolls (0.85 to 1.00 in increments of ~0.01 in real game, simplified here)
-    const threshold = targetMaxHp;
-    // (max - threshold) / (max - min) roughly
-    const chance = Math.floor(((maxDamage - threshold + 1) / (maxDamage - minDamage + 1)) * 100);
-    hitsToKO = `乱数1発 (${chance}%)`;
-  } else if (minPercent >= 50) {
+  let minDamage = Math.floor(Math.floor(Math.floor(baseDamage * stab) * effectiveness * 0.85) * weatherBonus * itemMultiplier);
+  let maxDamage = Math.floor(Math.floor(Math.floor(baseDamage * stab) * effectiveness * 1.00) * weatherBonus * itemMultiplier);
+
+  // 防御側のアイテム補正（きあいのタスキ）
+  let itemNote = undefined;
+  if (defenderItem === "きあいのタスキ" && maxDamage >= targetMaxHp) {
+    itemNote = "タスキ";
+    if (minDamage >= targetMaxHp) minDamage = targetMaxHp - 1;
+    if (maxDamage >= targetMaxHp) maxDamage = targetMaxHp - 1;
+  }
+
+  // 確定◯発の計算
+  const hitsToKORaw = minDamage > 0 ? Math.ceil(targetMaxHp / Math.min(maxDamage, targetMaxHp)) : 99;
+  let hitsToKO = hitsToKORaw <= 1 ? "確定1発" : hitsToKORaw === 2 ? "確定2発" : hitsToKORaw === 3 ? "確定3発" : "3発以上";
+
+  if (hitsToKORaw > 1 && maxDamage >= targetMaxHp) {
+    hitsToKO = `乱数1発`;
+  }
+
+  if (itemNote === "タスキ" && hitsToKO.includes("1発")) {
     hitsToKO = "確定2発";
-  } else if (maxPercent >= 50) {
-    hitsToKO = "乱数2発";
-  } else if (minPercent >= 33.3) {
-    hitsToKO = "確定3発";
-  } else {
-    hitsToKO = "3発以上";
   }
 
   return {
-    minDamage,
-    maxDamage,
-    minPercent: Number(minPercent.toFixed(1)),
-    maxPercent: Number(maxPercent.toFixed(1)),
+    minDamage: Math.min(minDamage, targetMaxHp),
+    maxDamage: Math.min(maxDamage, targetMaxHp),
+    minPercent: Math.min(Math.floor((minDamage / targetMaxHp) * 1000) / 10, 100),
+    maxPercent: Math.min(Math.floor((maxDamage / targetMaxHp) * 1000) / 10, 100),
     hitsToKO,
     stabBonus: stab,
-    effectiveness: immunityReason ? 0 : effectiveness,
+    effectiveness,
     weatherBonus,
-    immunityReason
+    immunityReason,
+    itemNote
   };
 };

@@ -63,27 +63,13 @@ export interface Pokemon {
   availableIn?: string[];
 }
 
-export interface StatRanks {
-  attack: number;
-  defense: number;
-  spAttack: number;
-  spDefense: number;
-  speed: number;
-}
-
 export interface MyPokemon {
   base: Pokemon;
   evs: Stats;
   nature: string;
   ability: string;
+  item?: string;
   moves: (string | null)[];
-  statRanks?: StatRanks;
-}
-
-interface Props {
-  pokemon: MyPokemon;
-  onSave: (updated: MyPokemon) => void;
-  onClose: () => void;
 }
 
 export const NATURES = [
@@ -95,6 +81,39 @@ export const NATURES = [
   "てれや (補正なし)", "がんばりや (補正なし)", "すなお (補正なし)", "きまぐれ (補正なし)", "まじめ (補正なし)"
 ];
 
+export const ITEMS = [
+  "なし",
+  "こだわりハチマキ",
+  "こだわりメガネ",
+  "こだわりスカーフ",
+  "いのちのたま",
+  "たつじんのおび",
+  "とつげきチョッキ",
+  "きあいのタスキ",
+  "パンチグローブ",
+  "ちからのハチマキ",
+  "ものしりメガネ",
+  "しんぴのしずく",
+  "もくたん",
+  "じしゃく",
+  "きせきのタネ",
+  "シルクのスカーフ",
+  "くろいメガネ",
+  "メタルコート",
+  "のろいのおふだ",
+  "するどいくちばし",
+  "りゅうのキバ",
+  "どくバリ",
+  "やわらかいすな",
+  "かたいいし",
+  "とけないこおり",
+  "まがったスプーン",
+  "ぎんのこな",
+  "くろおび",
+  "ようせいのはね",
+  "ノーマルジュエル",
+];
+
 const statLabels = [
   { key: 'hp', label: 'HP', icon: <Heart className="w-4 h-4 text-green-500" /> },
   { key: 'attack', label: '攻撃', icon: <Swords className="w-4 h-4 text-red-500" /> },
@@ -104,11 +123,17 @@ const statLabels = [
   { key: 'speed', label: '素早', icon: <Zap className="w-4 h-4 text-yellow-500" /> }
 ] as const;
 
+interface Props {
+  pokemon: MyPokemon;
+  onSave: (updated: MyPokemon) => void;
+  onClose: () => void;
+}
+
 export const PokemonDetailModal: React.FC<Props> = ({ pokemon, onSave, onClose }) => {
   const [evs, setEvs] = useState<Stats>({ ...pokemon.evs });
-  const [statRanks, setStatRanks] = useState<StatRanks>(pokemon.statRanks || { attack: 0, defense: 0, spAttack: 0, spDefense: 0, speed: 0 });
   const [nature, setNature] = useState(pokemon.nature || NATURES[0]);
   const [ability, setAbility] = useState(pokemon.ability || pokemon.base.abilities[0]);
+  const [item, setItem] = useState(pokemon.item || "なし");
   const [moves, setMoves] = useState<(string | null)[]>(pokemon.moves || [null, null, null, null]);
   const [activeMoveIndex, setActiveMoveIndex] = useState<number | null>(null);
   const [moveSearchQuery, setMoveSearchQuery] = useState('');
@@ -117,13 +142,11 @@ export const PokemonDetailModal: React.FC<Props> = ({ pokemon, onSave, onClose }
   const getFilteredMoves = (query: string) => {
     let availableMoves = movesData;
     
-    // 相手側の技の絞り込み（そのポケモンが覚える技だけ）
     const myLearnset = learnsets[pokemon.base.name];
     if (myLearnset && myLearnset.length > 0) {
       availableMoves = movesData.filter(m => myLearnset.includes(m.name));
     }
 
-    // 未実装技の除外処理
     if (!showUnimplemented) {
       availableMoves = availableMoves.filter(m => !unimplementedMoves.includes(m.name));
     }
@@ -141,12 +164,11 @@ export const PokemonDetailModal: React.FC<Props> = ({ pokemon, onSave, onClose }
 
   const handleSmartEvClick = (statKey: keyof Stats) => {
     if (evs[statKey] === 252) {
-      // 既に252ならリセット（トグル機能）
       setEvs({ ...evs, [statKey]: 0 });
       return;
     }
     
-    const available = remainingEVs + evs[statKey]; // このステータスに振れる最大値
+    const available = remainingEVs + evs[statKey];
     const amountToAdd = Math.min(252, available);
     
     setEvs({ ...evs, [statKey]: amountToAdd });
@@ -175,8 +197,7 @@ export const PokemonDetailModal: React.FC<Props> = ({ pokemon, onSave, onClose }
         </div>
 
         <div className="p-4 space-y-6 max-h-[70vh] overflow-y-auto">
-          {/* 特性 & 性格 */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-3 gap-3">
             <div>
               <label className="flex items-center text-xs font-bold text-slate-500 mb-1">
                 特性
@@ -187,7 +208,7 @@ export const PokemonDetailModal: React.FC<Props> = ({ pokemon, onSave, onClose }
               <select 
                 value={ability} 
                 onChange={e => setAbility(e.target.value)}
-                className="w-full p-2 text-sm bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-indigo-400"
+                className="w-full p-2 text-xs bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-indigo-400"
               >
                 {pokemon.base.abilities.map(a => <option key={a} value={a}>{a}</option>)}
                 {pokemon.base.hiddenAbilities.map(a => <option key={a} value={a}>{a} (夢)</option>)}
@@ -198,15 +219,23 @@ export const PokemonDetailModal: React.FC<Props> = ({ pokemon, onSave, onClose }
               <select 
                 value={nature} 
                 onChange={e => setNature(e.target.value)}
-                className="w-full p-2 text-sm bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-indigo-400"
+                className="w-full p-2 text-xs bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-indigo-400"
               >
-                {NATURES.map(n => <option key={n} value={n}>{n}</option>)}
+                {NATURES.map(n => <option key={n} value={n}>{n.split(' ')[0]}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-500 mb-1">もちもの</label>
+              <select 
+                value={item} 
+                onChange={e => setItem(e.target.value)}
+                className="w-full p-2 text-xs bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-indigo-400"
+              >
+                {ITEMS.map(i => <option key={i} value={i}>{i}</option>)}
               </select>
             </div>
           </div>
 
-          
-          {/* 技選択 */}
           <div>
             <div className="flex items-center justify-between mb-2">
               <label className="block text-xs font-bold text-slate-500">技 (最大4つ)</label>
@@ -241,7 +270,6 @@ export const PokemonDetailModal: React.FC<Props> = ({ pokemon, onSave, onClose }
                           setMoveSearchQuery(moves[index] || '');
                         }}
                         onBlur={() => {
-                          // Allow click on dropdown to register first
                           setTimeout(() => {
                             if (activeMoveIndex === index) setActiveMoveIndex(null);
                           }, 200);
@@ -276,10 +304,7 @@ export const PokemonDetailModal: React.FC<Props> = ({ pokemon, onSave, onClose }
                             <button
                               key={m.name}
                               className="w-full text-left p-2.5 hover:bg-slate-50 border-b border-slate-50 last:border-0 flex justify-between items-center text-sm transition-colors"
-                              onMouseDown={(e) => {
-                                // Prevent blur from firing before click
-                                e.preventDefault();
-                              }}
+                              onMouseDown={(e) => { e.preventDefault(); }}
                               onClick={() => {
                                 const newMoves = [...moves];
                                 newMoves[index] = m.name;
@@ -307,7 +332,6 @@ export const PokemonDetailModal: React.FC<Props> = ({ pokemon, onSave, onClose }
             </div>
           </div>
 
-          {/* 努力値スマート入力 */}
           <div>
             <div className="flex items-end justify-between mb-2">
               <label className="block text-sm font-bold text-slate-700">努力値 (EVs)</label>
@@ -350,18 +374,6 @@ export const PokemonDetailModal: React.FC<Props> = ({ pokemon, onSave, onClose }
                       onChange={(e) => handleEvChange(key as keyof Stats, Number(e.target.value))}
                       className="w-16 p-1.5 text-center text-sm border border-slate-200 rounded-lg outline-none focus:border-indigo-400 bg-slate-50 font-mono"
                     />
-                    {key !== 'hp' && (
-                      <select
-                        value={statRanks[key as keyof StatRanks]}
-                        onChange={(e) => setStatRanks({ ...statRanks, [key]: Number(e.target.value) })}
-                        className="w-[72px] p-1 text-center text-[10px] font-bold border border-slate-200 rounded-lg outline-none bg-slate-100 text-slate-600"
-                        title="ランク補正 (-6 ~ +6)"
-                      >
-                        {[-6,-5,-4,-3,-2,-1,0,1,2,3,4,5,6].map(r => (
-                          <option key={r} value={r}>ランク {r > 0 ? `+${r}` : r === 0 ? '±0' : r}</option>
-                        ))}
-                      </select>
-                    )}
                   </div>
                 </div>
               ))}
@@ -372,7 +384,7 @@ export const PokemonDetailModal: React.FC<Props> = ({ pokemon, onSave, onClose }
         <div className="p-4 bg-slate-50 border-t">
           <button 
             onClick={() => {
-              onSave({ ...pokemon, evs, nature, ability, moves });
+              onSave({ ...pokemon, evs, nature, ability, item, moves });
               onClose();
             }}
             className="w-full py-3 bg-gradient-to-r from-indigo-500 to-indigo-600 text-white rounded-xl font-bold shadow-md active:scale-[0.98] transition-transform"

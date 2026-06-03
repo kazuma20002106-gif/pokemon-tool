@@ -7,6 +7,8 @@ import { getWeaknesses } from './utils/typeChart';
 import { applyStatRank } from './utils/statsCalc';
 import { DamageCalculator } from './components/DamageCalculator';
 
+export type BattleStatRanks = { attack: number, defense: number, spAttack: number, spDefense: number, speed: number };
+
 type GameVersion = 'champions' | 'sv';
 
 const ClickTooltip = ({ text, className = "w-48" }: { text: React.ReactNode, className?: string }) => {
@@ -70,6 +72,24 @@ const App: React.FC = () => {
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [weather, setWeather] = useState<string>('none');
   const [oppActiveAbility, setOppActiveAbility] = useState<string>('');
+  const [oppActiveItem, setOppActiveItem] = useState<string>('なし');
+  
+  // バトル選出状態
+  const [activePokemonIndices, setActivePokemonIndices] = useState<number[]>([0,1,2,3,4,5]);
+  // バトル中のランク補正 (キーはパーティのインデックス)
+  const [battleRanks, setBattleRanks] = useState<Record<number, BattleStatRanks>>({});
+
+  const getBattleRanks = (index: number) => battleRanks[index] || { attack: 0, defense: 0, spAttack: 0, spDefense: 0, speed: 0 };
+
+  const handleBattleRankChange = (index: number, stat: keyof BattleStatRanks, value: number) => {
+    setBattleRanks(prev => ({
+      ...prev,
+      [index]: {
+        ...getBattleRanks(index),
+        [stat]: Math.max(-6, Math.min(6, value))
+      }
+    }));
+  };
 
   useEffect(() => {
     if (opponent && opponent.abilities.length > 0) {
@@ -149,7 +169,7 @@ const App: React.FC = () => {
     }
   };
 
-  const calculateActualSpeed = (myPoke: MyPokemon) => {
+  const calculateActualSpeed = (myPoke: MyPokemon, rank: number = 0) => {
     // 実際の素早さ計算 (レベル50想定)
     // 実数値 = ((種族値×2 + 個体値 + 努力値/4) × 50 / 100 + 5) × 性格補正
     const base = myPoke.base.stats.speed;
@@ -162,8 +182,12 @@ const App: React.FC = () => {
     if (myPoke.nature.includes('速↓')) stat = Math.floor(stat * 0.9);
     
     // ランク補正
-    let rank = myPoke.statRanks?.speed || 0;
     stat = applyStatRank(stat, rank);
+
+    // アイテム補正
+    if (myPoke.item === 'こだわりスカーフ') {
+      stat = Math.floor(stat * 1.5);
+    }
 
     // 特性・天候補正
     if ((myPoke.ability === 'すいすい' && weather === 'rain') ||
@@ -237,7 +261,7 @@ const App: React.FC = () => {
                     <div className="text-[10px] text-slate-500 truncate mt-0.5">{p.ability} / {p.nature.split(' ')[0]}</div>
                     <div className="mt-2 pt-2 border-t border-indigo-100/50 flex flex-col gap-1.5">
                       <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-bold text-indigo-500 bg-indigo-100 px-1.5 py-0.5 rounded">実速: {calculateActualSpeed(p)}</span>
+                        <span className="text-[10px] font-bold text-indigo-500 bg-indigo-100 px-1.5 py-0.5 rounded">実速: {calculateActualSpeed(p, 0)}</span>
                       </div>
                       <div className="text-[10px] font-bold text-white bg-indigo-500 hover:bg-indigo-600 rounded p-1.5 flex items-center justify-center transition-colors shadow-sm w-full">
                         <Settings2 className="w-3 h-3 mr-1" />
@@ -265,6 +289,43 @@ const App: React.FC = () => {
             <Swords className="w-5 h-5 mr-2 text-slate-600" />
             <h2 className="font-bold text-slate-700">対戦相手 (分析と素早さ比較)</h2>
           </div>
+
+          {/* 選出フィルター */}
+          {opponent && myTeam.some(p => p !== null) && (
+            <div className="bg-slate-50 border-b border-slate-200 p-3">
+              <div className="text-[10px] font-bold text-slate-500 mb-2">選出メンバー (タップで表示切替)</div>
+              <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
+                {myTeam.map((p, i) => {
+                  if (!p) return null;
+                  const isActive = activePokemonIndices.includes(i);
+                  return (
+                    <button
+                      key={i}
+                      onClick={() => {
+                        if (isActive) {
+                          setActivePokemonIndices(prev => prev.filter(idx => idx !== i));
+                        } else {
+                          setActivePokemonIndices(prev => [...prev, i]);
+                        }
+                      }}
+                      className={`flex-shrink-0 flex items-center gap-1.5 px-2 py-1.5 rounded-lg border text-xs font-bold transition-all ${
+                        isActive 
+                          ? 'bg-indigo-600 text-white border-indigo-700 shadow-sm' 
+                          : 'bg-white text-slate-400 border-slate-200 opacity-60'
+                      }`}
+                    >
+                      <img 
+                        src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${p.base.id}.png`}
+                        alt=""
+                        className="w-5 h-5 -ml-1 object-contain"
+                      />
+                      <span className="truncate max-w-[60px]">{p.base.name}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
           
           {/* 天候トグル */}
           <div className="bg-white border-b border-slate-200">
@@ -380,7 +441,6 @@ const App: React.FC = () => {
                       </div>
                     </div>
                   </div>
-
                   {/* 相手の特性 (複数ある場合は選択) */}
                   {opponent.abilities.length > 0 && (
                     <div className="mb-4">
@@ -402,6 +462,26 @@ const App: React.FC = () => {
                       </div>
                     </div>
                   )}
+
+                  {/* 相手の道具 */}
+                  <div className="mb-4">
+                    <div className="text-[10px] font-bold text-slate-500 mb-2">想定もちもの (タップで変更)</div>
+                    <div className="flex flex-wrap gap-2">
+                      {["なし", "こだわりスカーフ", "とつげきチョッキ", "きあいのタスキ", "いのちのたま", "オボンのみ"].map(item => (
+                        <button
+                          key={item}
+                          onClick={() => setOppActiveItem(item)}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
+                            oppActiveItem === item 
+                              ? 'bg-amber-600 text-white shadow-md border border-amber-700' 
+                              : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+                          }`}
+                        >
+                          {item}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                   
                   <div className="grid grid-cols-2 gap-x-4 gap-y-1 mb-4">
                     <StatBar label="HP" value={opponent.stats.hp} />
@@ -427,13 +507,20 @@ const App: React.FC = () => {
                 <div className="space-y-2">
                   <h4 className="text-xs font-bold text-slate-500 ml-1">自陣との素早さ比較 (相手の無振〜最速想定)</h4>
                   {myTeam.map((myPoke, i) => {
-                    if (!myPoke) return null;
+                    if (!myPoke || !activePokemonIndices.includes(i)) return null;
                     
-                    const mySpeed = calculateActualSpeed(myPoke);
+                    const myRanks = getBattleRanks(i);
+                    const mySpeed = calculateActualSpeed(myPoke, myRanks.speed);
                     // 相手の素早さ(無振り) = (種族値×2 + 31) × 50 / 100 + 5
                     let oppMinSpeed = Math.floor((opponent.stats.speed * 2 + 31) * 50 / 100 + 5);
                     // 相手の素早さ(最速) = ((種族値×2 + 31 + 252/4) × 50 / 100 + 5) × 1.1
-                    let oppMaxSpeed = Math.floor(Math.floor((opponent.stats.speed * 2 + 31 + 63) * 50 / 100 + 5) * 1.1);
+                    let oppMaxSpeed = Math.floor((Math.floor((opponent.stats.speed * 2 + 31 + 63) * 50 / 100) + 5) * 1.1);
+                    
+                    // アイテム補正
+                    if (oppActiveItem === 'こだわりスカーフ') {
+                      oppMinSpeed = Math.floor(oppMinSpeed * 1.5);
+                      oppMaxSpeed = Math.floor(oppMaxSpeed * 1.5);
+                    }
 
                     // 天候と相手特性による素早さ補正
                     if ((oppActiveAbility === 'すいすい' && weather === 'rain') ||
@@ -481,9 +568,13 @@ const App: React.FC = () => {
                 {/* ダメージ計算エリア */}
                 <DamageCalculator 
                   myTeam={myTeam} 
+                  activePokemonIndices={activePokemonIndices}
+                  battleRanks={battleRanks}
+                  onRankChange={handleBattleRankChange}
                   opponent={opponent} 
                   weather={weather} 
                   oppActiveAbility={oppActiveAbility} 
+                  oppActiveItem={oppActiveItem}
                 />
               </div>
             )}
