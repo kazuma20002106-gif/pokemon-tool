@@ -364,21 +364,29 @@ const App: React.FC = () => {
                   </div>
                 } 
               />
+              {weather !== 'none' && (
+                <span className="ml-3 text-[10px] font-bold text-slate-400">
+                  {weather === 'sun' && "炎技1.5倍、水技0.5倍"}
+                  {weather === 'rain' && "水技1.5倍、炎技0.5倍"}
+                  {weather === 'sandstorm' && "岩タイプの特防1.5倍"}
+                  {weather === 'snow' && "氷タイプの防御1.5倍"}
+                </span>
+              )}
             </div>
             <div className="px-3 pb-3 flex overflow-x-auto gap-2 scrollbar-hide">
               {[
-                { id: 'none', label: '天候なし', icon: <Minus className="w-3.5 h-3.5" /> },
-                { id: 'sun', label: '晴れ', icon: <Sun className="w-3.5 h-3.5" /> },
-                { id: 'rain', label: '雨', icon: <CloudRain className="w-3.5 h-3.5" /> },
-                { id: 'sandstorm', label: '砂嵐', icon: <Wind className="w-3.5 h-3.5" /> },
-                { id: 'snow', label: '雪', icon: <Snowflake className="w-3.5 h-3.5" /> },
+                { id: 'none', label: '天候なし', icon: <Minus className="w-3.5 h-3.5" />, colorClass: 'bg-slate-500 border-slate-600 text-white' },
+                { id: 'sun', label: '晴れ', icon: <Sun className="w-3.5 h-3.5" />, colorClass: 'bg-orange-500 border-orange-600 text-white' },
+                { id: 'rain', label: '雨', icon: <CloudRain className="w-3.5 h-3.5" />, colorClass: 'bg-blue-500 border-blue-600 text-white' },
+                { id: 'sandstorm', label: '砂嵐', icon: <Wind className="w-3.5 h-3.5" />, colorClass: 'bg-yellow-700 border-yellow-800 text-white' },
+                { id: 'snow', label: '雪', icon: <Snowflake className="w-3.5 h-3.5" />, colorClass: 'bg-cyan-500 border-cyan-600 text-white' },
               ].map(w => (
                 <button
                   key={w.id}
                   onClick={() => setWeather(w.id)}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-colors ${
                     weather === w.id
-                      ? 'bg-amber-500 text-white shadow-md border border-amber-600'
+                      ? `${w.colorClass} shadow-md`
                       : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
                   }`}
                 >

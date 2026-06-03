@@ -1,10 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Info } from 'lucide-react';
 import { Pokemon, MyPokemon } from './PokemonDetailModal';
-import { calculateDamage } from '../utils/damageCalc';
+import { calculateDamage, getEffectiveness } from '../utils/damageCalc';
 import { calculateStat, getNatureMultiplier, applyStatRank } from '../utils/statsCalc';
 import movesData from '../data/moves.json';
-import { ChevronUp, ChevronDown, Minus, Plus } from 'lucide-react';
+import { ChevronUp, ChevronDown, Minus, Plus, ShieldAlert, Swords } from 'lucide-react';
 import { BattleStatRanks } from '../App';
 
 interface Props {
@@ -80,6 +80,8 @@ const InfoTooltip = ({ text, className = "w-48" }: { text: string, className?: s
 };
 
 export const DamageCalculator: React.FC<Props> = ({ myTeam, activePokemonIndices, battleRanks, onRankChange, opponent, weather, oppActiveAbility, oppActiveItem }) => {
+  const [worstCaseMode, setWorstCaseMode] = useState(false);
+
   // Opponent defensive stats (assume 252 HP / 0 Def / 0 SpD as default for MVP, or just H252)
   // HP: 252 EV, Def/SpD: 0 EV, Nature: 1.0
   const oppMaxHp = calculateStat(opponent.stats.hp, 31, 252, 50, 1.0, true);
@@ -116,13 +118,29 @@ export const DamageCalculator: React.FC<Props> = ({ myTeam, activePokemonIndices
   const oppSpecialAbility = specialAbilities.includes(oppActiveAbility) ? oppActiveAbility : null;
 
   return (
-    <div className="mt-4 p-4 border border-slate-200 bg-slate-50 rounded-xl">
-      <div className="flex justify-between items-end mb-3">
-        <h4 className="text-sm font-bold text-slate-700">与ダメージ計算</h4>
-        <span className="text-[10px] text-slate-500 font-medium bg-white px-2 py-1 rounded-md border border-slate-200">
-          相手想定: H252 / B0 / D0
-        </span>
+    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mt-4">
+      <div className="bg-slate-100 p-3 border-b border-slate-200 flex items-center justify-between">
+        <div className="flex items-center text-slate-700">
+          <Swords className="w-5 h-5 mr-2" />
+          <h2 className="font-bold">ダメージ計算</h2>
+        </div>
+        <button
+          onClick={() => setWorstCaseMode(!worstCaseMode)}
+          className={`flex items-center px-2 py-1.5 rounded text-[10px] font-bold transition-all shadow-sm ${
+             worstCaseMode ? 'bg-red-500 text-white shadow-md border border-red-600' : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200'
+          }`}
+        >
+          <ShieldAlert className={`w-3 h-3 mr-1 ${worstCaseMode ? 'text-white' : 'text-slate-400'}`} />
+          {worstCaseMode ? '最悪想定: ON' : '最悪想定: OFF'}
+        </button>
       </div>
+      <div className="p-3 space-y-4">
+        <div className="flex justify-between items-end mb-3">
+          <h4 className="text-sm font-bold text-slate-700">与ダメージ計算</h4>
+          <span className="text-[10px] text-slate-500 font-medium bg-white px-2 py-1 rounded-md border border-slate-200">
+            相手想定: H252 / B0 / D0
+          </span>
+        </div>
       
       {oppSpecialAbility && (
         <div className="mb-3 px-3 py-2 bg-yellow-50 border border-yellow-200 text-yellow-800 text-xs rounded-lg">
@@ -220,7 +238,32 @@ export const DamageCalculator: React.FC<Props> = ({ myTeam, activePokemonIndices
                     }
                   }
 
-                  const targetDef = isPhysical ? oppDef : oppSpDef;
+                  let targetDef = isPhysical ? oppDef : oppSpDef;
+                  
+                  let currentOppItem = oppActiveItem || "なし";
+                  if (worstCaseMode) {
+                    currentOppItem = "なし"; // fallback
+                    const effectiveness = getEffectiveness(moveData.type, opponent.types);
+                    if (effectiveness > 1) {
+                      const berryForType: Record<string, string> = {
+                        "ほのお": "オッカのみ", "みず": "イトケのみ", "でんき": "ソクノのみ", "くさ": "リンドのみ",
+                        "こおり": "ヤチェのみ", "かくとう": "ヨプのみ", "どく": "ビアーのみ", "じめん": "シュカのみ",
+                        "ひこう": "バコウのみ", "エスパー": "ウタンのみ", "むし": "タンガのみ", "いわ": "ヨロギのみ",
+                        "ゴースト": "カシブのみ", "ドラゴン": "ハバンのみ", "あく": "ナモのみ", "はがね": "リリバのみ",
+                        "フェアリー": "ロゼルのみ"
+                      };
+                      currentOppItem = berryForType[moveData.type] || "なし";
+                    } else if (moveData.type === "ノーマル") {
+                      currentOppItem = "ホズのみ";
+                    } else if (!isPhysical) {
+                      currentOppItem = "とつげきチョッキ";
+                    }
+                    
+                    if (!isPhysical && currentOppItem === "とつげきチョッキ" && oppActiveItem !== "とつげきチョッキ") {
+                      // oppSpDef already multiplied if oppActiveItem is Assault Vest, otherwise we must apply it here
+                      targetDef = Math.floor(targetDef * 1.5);
+                    }
+                  }
 
                   const damage = calculateDamage(
                     50,
@@ -235,7 +278,7 @@ export const DamageCalculator: React.FC<Props> = ({ myTeam, activePokemonIndices
                     [oppActiveAbility],
                     weather,
                     myPoke.item || "なし",
-                    oppActiveItem || "なし"
+                    currentOppItem
                   );
 
                   let resultColor = "text-slate-600";
@@ -316,6 +359,7 @@ export const DamageCalculator: React.FC<Props> = ({ myTeam, activePokemonIndices
             </div>
           );
         })}
+      </div>
       </div>
     </div>
   );
