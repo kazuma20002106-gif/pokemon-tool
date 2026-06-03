@@ -8,6 +8,8 @@ import movesData from '../data/moves.json';
 interface Props {
   myTeam: (MyPokemon | null)[];
   opponent: Pokemon;
+  weather: string;
+  oppActiveAbility: string;
 }
 
 const InfoTooltip = ({ text, className = "w-48" }: { text: string, className?: string }) => {
@@ -32,12 +34,20 @@ const InfoTooltip = ({ text, className = "w-48" }: { text: string, className?: s
   );
 };
 
-export const DamageCalculator: React.FC<Props> = ({ myTeam, opponent }) => {
+export const DamageCalculator: React.FC<Props> = ({ myTeam, opponent, weather, oppActiveAbility }) => {
   // Opponent defensive stats (assume 252 HP / 0 Def / 0 SpD as default for MVP, or just H252)
   // HP: 252 EV, Def/SpD: 0 EV, Nature: 1.0
   const oppMaxHp = calculateStat(opponent.stats.hp, 31, 252, 50, 1.0, true);
-  const oppDef = calculateStat(opponent.stats.defense, 31, 0, 50, 1.0, false);
-  const oppSpDef = calculateStat(opponent.stats.spDefense, 31, 0, 50, 1.0, false);
+  let oppDef = calculateStat(opponent.stats.defense, 31, 0, 50, 1.0, false);
+  let oppSpDef = calculateStat(opponent.stats.spDefense, 31, 0, 50, 1.0, false);
+
+  // 天候による耐久アップ効果
+  if (weather === 'sandstorm' && opponent.types.includes('いわ')) {
+    oppSpDef = Math.floor(oppSpDef * 1.5);
+  }
+  if (weather === 'snow' && opponent.types.includes('こおり')) {
+    oppDef = Math.floor(oppDef * 1.5);
+  }
 
   const teamWithMoves = myTeam.filter(p => p !== null && p.moves && p.moves.some(m => m !== null)) as MyPokemon[];
 
@@ -50,9 +60,9 @@ export const DamageCalculator: React.FC<Props> = ({ myTeam, opponent }) => {
     );
   }
 
-  const hasIntimidate = opponent.abilities.includes("いかく");
+  const hasIntimidate = oppActiveAbility === "いかく";
   const specialAbilities = ["ばけのかわ", "マルチスケイル", "ファントムガード", "アイスフェイス"];
-  const oppSpecialAbility = opponent.abilities.find(a => specialAbilities.includes(a));
+  const oppSpecialAbility = specialAbilities.includes(oppActiveAbility) ? oppActiveAbility : null;
 
   return (
     <div className="mt-4 p-4 border border-slate-200 bg-slate-50 rounded-xl">
@@ -114,11 +124,15 @@ export const DamageCalculator: React.FC<Props> = ({ myTeam, opponent }) => {
                   }
                   actualAttack = applyStatRank(actualAttack, atkRank);
 
-                  // 特性によるステータス補正
+                  // 特性や天候によるステータス補正
                   if (isPhysical) {
                     if (myPoke.ability === "ちからもち" || myPoke.ability === "ヨガパワー") {
                       actualAttack = Math.floor(actualAttack * 2);
                     } else if (myPoke.ability === "はりきり") {
+                      actualAttack = Math.floor(actualAttack * 1.5);
+                    }
+                  } else {
+                    if (myPoke.ability === "サンパワー" && weather === "sun") {
                       actualAttack = Math.floor(actualAttack * 1.5);
                     }
                   }
@@ -135,7 +149,8 @@ export const DamageCalculator: React.FC<Props> = ({ myTeam, opponent }) => {
                     opponent.types,
                     oppMaxHp,
                     myPoke.ability,
-                    opponent.abilities
+                    [oppActiveAbility],
+                    weather
                   );
 
                   let resultColor = "text-slate-600";
@@ -165,6 +180,16 @@ export const DamageCalculator: React.FC<Props> = ({ myTeam, opponent }) => {
                             {damage.effectiveness < 1 && damage.effectiveness > 0 && (
                               <span className="text-[9px] bg-blue-50 text-blue-600 px-1 rounded border border-blue-100">
                                 いまひとつ ({damage.effectiveness}倍)
+                              </span>
+                            )}
+                            {damage.weatherBonus !== 1.0 && (
+                              <span className="text-[9px] bg-amber-50 text-amber-600 px-1 rounded border border-amber-200">
+                                天候補正 ({damage.weatherBonus}倍)
+                              </span>
+                            )}
+                            {weather === 'sun' && (moveName === 'ソーラービーム' || moveName === 'ソーラーブレード') && (
+                              <span className="text-[9px] bg-yellow-100 text-yellow-700 px-1 rounded border border-yellow-200">
+                                ため無しで即攻撃可能
                               </span>
                             )}
                             {damage.immunityReason && (

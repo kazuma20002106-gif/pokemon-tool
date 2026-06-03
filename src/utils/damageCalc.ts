@@ -8,6 +8,7 @@ export interface DamageResult {
   hitsToKO: string;
   stabBonus: number;
   effectiveness: number;
+  weatherBonus: number;
   immunityReason?: string;
 }
 
@@ -32,7 +33,8 @@ export const calculateDamage = (
   targetTypes: string[],
   targetMaxHp: number,
   attackerAbility: string = "",
-  defenderAbilities: string[] = []
+  defenderAbilities: string[] = [],
+  weather: string = "none"
 ): DamageResult => {
   // 特性による威力補正
   let finalPower = power;
@@ -70,8 +72,18 @@ export const calculateDamage = (
     immunityReason = 'そうしょく';
   }
 
-  // Modifier = STAB * Effectiveness
-  const modifier = immunityReason ? 0 : (stab * effectiveness);
+  // 天候ボーナス
+  let weatherBonus = 1.0;
+  if (weather === "sun") {
+    if (moveType === "ほのお") weatherBonus = 1.5;
+    if (moveType === "みず") weatherBonus = 0.5;
+  } else if (weather === "rain") {
+    if (moveType === "みず") weatherBonus = 1.5;
+    if (moveType === "ほのお") weatherBonus = 0.5;
+  }
+
+  // Modifier = STAB * Effectiveness * Weather
+  const modifier = immunityReason ? 0 : (stab * effectiveness * weatherBonus);
 
   // 乱数 (0.85 ~ 1.0)
   const minDamage = Math.floor(Math.floor(baseDamage * modifier) * 0.85);
@@ -109,6 +121,7 @@ export const calculateDamage = (
     hitsToKO,
     stabBonus: stab,
     effectiveness: immunityReason ? 0 : effectiveness,
+    weatherBonus,
     immunityReason
   };
 };

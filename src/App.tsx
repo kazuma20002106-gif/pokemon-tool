@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import svData from './data/sv.json';
 import championsData from './data/champions.json';
-import { Search, ChevronUp, ChevronDown, Minus, User, Swords, Trash2, Plus, Gamepad2, Settings2 } from 'lucide-react';
+import { Search, ChevronUp, ChevronDown, Minus, User, Swords, Trash2, Plus, Gamepad2, Settings2, Sun, CloudRain, Wind, Snowflake } from 'lucide-react';
 import { PokemonDetailModal, Pokemon, MyPokemon, NATURES } from './components/PokemonDetailModal';
 import { getWeaknesses } from './utils/typeChart';
+import { applyStatRank } from './utils/statsCalc';
 import { DamageCalculator } from './components/DamageCalculator';
 
 type GameVersion = 'champions' | 'sv';
@@ -45,6 +46,16 @@ const App: React.FC = () => {
   const [showMyTeamDropdown, setShowMyTeamDropdown] = useState(false);
   const [opponent, setOpponent] = useState<Pokemon | null>(null);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [weather, setWeather] = useState<string>('none');
+  const [oppActiveAbility, setOppActiveAbility] = useState<string>('');
+
+  useEffect(() => {
+    if (opponent && opponent.abilities.length > 0) {
+      setOppActiveAbility(opponent.abilities[0]);
+    } else {
+      setOppActiveAbility('');
+    }
+  }, [opponent]);
 
   const pokemonData = (gameVersion === 'champions' ? championsData : svData) as Pokemon[];
 
@@ -127,6 +138,18 @@ const App: React.FC = () => {
     // 性格補正
     if (myPoke.nature.includes('速↑')) stat = Math.floor(stat * 1.1);
     if (myPoke.nature.includes('速↓')) stat = Math.floor(stat * 0.9);
+    
+    // ランク補正
+    let rank = myPoke.statRanks?.speed || 0;
+    stat = applyStatRank(stat, rank);
+
+    // 特性・天候補正
+    if ((myPoke.ability === 'すいすい' && weather === 'rain') ||
+        (myPoke.ability === 'ようりょくそ' && weather === 'sun') ||
+        (myPoke.ability === 'すなかき' && weather === 'sandstorm') ||
+        (myPoke.ability === 'ゆきかき' && weather === 'snow')) {
+      stat = Math.floor(stat * 2);
+    }
     
     return stat;
   };
@@ -221,6 +244,30 @@ const App: React.FC = () => {
             <h2 className="font-bold text-slate-700">対戦相手 (分析と素早さ比較)</h2>
           </div>
           
+          {/* 天候トグル */}
+          <div className="p-3 bg-white border-b border-slate-200 flex overflow-x-auto gap-2 scrollbar-hide">
+            {[
+              { id: 'none', label: '天候なし', icon: <Minus className="w-3.5 h-3.5" /> },
+              { id: 'sun', label: '晴れ', icon: <Sun className="w-3.5 h-3.5" /> },
+              { id: 'rain', label: '雨', icon: <CloudRain className="w-3.5 h-3.5" /> },
+              { id: 'sandstorm', label: '砂嵐', icon: <Wind className="w-3.5 h-3.5" /> },
+              { id: 'snow', label: '雪', icon: <Snowflake className="w-3.5 h-3.5" /> },
+            ].map(w => (
+              <button
+                key={w.id}
+                onClick={() => setWeather(w.id)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-colors ${
+                  weather === w.id
+                    ? 'bg-amber-500 text-white shadow-md border border-amber-600'
+                    : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+                }`}
+              >
+                {w.icon}
+                {w.label}
+              </button>
+            ))}
+          </div>
+
           <div className="p-4">
             <div className="relative">
               <div className="flex items-center border-2 border-slate-200 rounded-xl bg-slate-50 overflow-hidden focus-within:ring-4 focus-within:ring-pokemon-red/20 focus-within:border-pokemon-red transition-all">
@@ -280,20 +327,41 @@ const App: React.FC = () => {
               <div className="mt-6 animate-[fadeIn_0.3s_ease-out]">
                 {/* 相手の詳細ステータス */}
                 <div className="bg-slate-50 rounded-xl p-4 border border-slate-200 mb-4">
-                  <div className="flex justify-between items-start mb-3">
+                  <div className="flex items-center gap-3 mb-4">
+                    <img 
+                      src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${opponent.id}.png`}
+                      alt={opponent.name}
+                      className="w-16 h-16 drop-shadow-md bg-white rounded-full border border-slate-200"
+                    />
                     <div>
-                      <h3 className="text-xl font-black text-slate-800">{opponent.name}</h3>
+                      <h3 className="font-black text-lg text-slate-800">{opponent.name}</h3>
                       <div className="flex gap-1 mt-1">
                         {opponent.types.map(t => <TypeBadge key={t} type={t} />)}
                       </div>
                     </div>
-                    <div className="text-right">
-                      <div className="text-[10px] text-slate-500 font-bold mb-1">想定特性</div>
-                      <div className="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded">
-                        {opponent.abilities.join(' / ')}
+                  </div>
+
+                  {/* 相手の特性 (複数ある場合は選択) */}
+                  {opponent.abilities.length > 0 && (
+                    <div className="mb-4">
+                      <div className="text-[10px] font-bold text-slate-500 mb-2">想定特性 (タップで変更)</div>
+                      <div className="flex flex-wrap gap-2">
+                        {opponent.abilities.map(ability => (
+                          <button
+                            key={ability}
+                            onClick={() => setOppActiveAbility(ability)}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
+                              oppActiveAbility === ability 
+                                ? 'bg-indigo-600 text-white shadow-md border border-indigo-700' 
+                                : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+                            }`}
+                          >
+                            {ability}
+                          </button>
+                        ))}
                       </div>
                     </div>
-                  </div>
+                  )}
                   
                   <div className="grid grid-cols-2 gap-x-4 gap-y-1 mb-4">
                     <StatBar label="HP" value={opponent.stats.hp} />
@@ -323,9 +391,18 @@ const App: React.FC = () => {
                     
                     const mySpeed = calculateActualSpeed(myPoke);
                     // 相手の素早さ(無振り) = (種族値×2 + 31) × 50 / 100 + 5
-                    const oppMinSpeed = Math.floor((opponent.stats.speed * 2 + 31) * 50 / 100 + 5);
+                    let oppMinSpeed = Math.floor((opponent.stats.speed * 2 + 31) * 50 / 100 + 5);
                     // 相手の素早さ(最速) = ((種族値×2 + 31 + 252/4) × 50 / 100 + 5) × 1.1
-                    const oppMaxSpeed = Math.floor(Math.floor((opponent.stats.speed * 2 + 31 + 63) * 50 / 100 + 5) * 1.1);
+                    let oppMaxSpeed = Math.floor(Math.floor((opponent.stats.speed * 2 + 31 + 63) * 50 / 100 + 5) * 1.1);
+
+                    // 天候と相手特性による素早さ補正
+                    if ((oppActiveAbility === 'すいすい' && weather === 'rain') ||
+                        (oppActiveAbility === 'ようりょくそ' && weather === 'sun') ||
+                        (oppActiveAbility === 'すなかき' && weather === 'sandstorm') ||
+                        (oppActiveAbility === 'ゆきかき' && weather === 'snow')) {
+                      oppMinSpeed = Math.floor(oppMinSpeed * 2);
+                      oppMaxSpeed = Math.floor(oppMaxSpeed * 2);
+                    }
                     
                     const isFasterThanMax = mySpeed > oppMaxSpeed;
                     const isSlowerThanMin = mySpeed < oppMinSpeed;
@@ -362,7 +439,12 @@ const App: React.FC = () => {
                   })}
                 </div>
                 {/* ダメージ計算エリア */}
-                <DamageCalculator myTeam={myTeam} opponent={opponent} />
+                <DamageCalculator 
+                  myTeam={myTeam} 
+                  opponent={opponent} 
+                  weather={weather} 
+                  oppActiveAbility={oppActiveAbility} 
+                />
               </div>
             )}
           </div>
