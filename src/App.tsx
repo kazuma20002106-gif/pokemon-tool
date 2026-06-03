@@ -181,8 +181,8 @@ const App: React.FC = () => {
         </section>
 
         {/* 相手検索 & 比較エリア */}
-        <section className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-          <div className="bg-slate-100 p-3 border-b border-slate-200 flex items-center">
+        <section className="bg-white rounded-2xl shadow-sm border border-slate-200">
+          <div className="bg-slate-100 p-3 border-b border-slate-200 flex items-center rounded-t-2xl">
             <Swords className="w-5 h-5 mr-2 text-slate-600" />
             <h2 className="font-bold text-slate-700">対戦相手 (分析と素早さ比較)</h2>
           </div>
