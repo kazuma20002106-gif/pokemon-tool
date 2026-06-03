@@ -6,6 +6,9 @@ import { PokemonDetailModal, Pokemon, MyPokemon, NATURES } from './components/Po
 import { getWeaknesses } from './utils/typeChart';
 import { applyStatRank } from './utils/statsCalc';
 import { DamageCalculator } from './components/DamageCalculator';
+import abilitiesData from './data/abilities.json';
+
+const abilitiesDict = abilitiesData as Record<string, string>;
 
 export type BattleStatRanks = { attack: number, defense: number, spAttack: number, spDefense: number, speed: number };
 
@@ -257,9 +260,18 @@ const App: React.FC = () => {
                     >
                       <Trash2 className="w-3 h-3" />
                     </button>
-                    <div className="text-sm font-bold text-slate-800 truncate">{p.base.name}</div>
-                    <div className="text-[10px] text-slate-500 truncate mt-0.5">{p.ability} / {p.nature.split(' ')[0]}</div>
-                    <div className="mt-2 pt-2 border-t border-indigo-100/50 flex flex-col gap-1.5">
+                    <div className="flex items-center gap-2 mb-1">
+                      <img 
+                        src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${p.base.id}.png`}
+                        alt=""
+                        className="w-8 h-8 object-contain drop-shadow-sm"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-bold text-slate-800 truncate leading-tight">{p.base.name}</div>
+                        <div className="text-[10px] text-slate-500 truncate">{p.ability} / {p.nature.split(' ')[0]}</div>
+                      </div>
+                    </div>
+                    <div className="mt-1 pt-1.5 border-t border-indigo-100/50 flex flex-col gap-1.5">
                       <div className="flex items-center justify-between">
                         <span className="text-[10px] font-bold text-indigo-500 bg-indigo-100 px-1.5 py-0.5 rounded">実速: {calculateActualSpeed(p, 0)}</span>
                       </div>
@@ -408,7 +420,14 @@ const App: React.FC = () => {
                           (document.activeElement as HTMLElement)?.blur();
                         }}
                       >
-                        <span className="font-bold text-slate-700">{p.name}</span>
+                        <div className="flex items-center gap-2">
+                          <img 
+                            src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${p.id}.png`}
+                            alt=""
+                            className="w-8 h-8 object-contain"
+                          />
+                          <span className="font-bold text-slate-700">{p.name}</span>
+                        </div>
                         <div className="flex gap-1">
                           {gameVersion === 'champions' && !p.availableIn?.includes('champions') && (
                             <span className="text-[10px] font-bold text-slate-500 bg-slate-200 px-1.5 py-0.5 rounded mr-1">未実装</span>
@@ -460,6 +479,13 @@ const App: React.FC = () => {
                           </button>
                         ))}
                       </div>
+                      
+                      {/* 特性の説明 */}
+                      {oppActiveAbility && abilitiesDict[oppActiveAbility] && (
+                        <div className="mt-2 text-xs text-slate-600 bg-slate-100 p-2 rounded-lg border border-slate-200 shadow-sm">
+                          <span className="font-bold text-indigo-600">効果:</span> {abilitiesDict[oppActiveAbility]}
+                        </div>
+                      )}
                     </div>
                   )}
 
@@ -605,7 +631,14 @@ const App: React.FC = () => {
                     (document.activeElement as HTMLElement)?.blur();
                   }}
                 >
-                  <span className="font-bold text-slate-700">{p.name}</span>
+                  <div className="flex items-center gap-2">
+                    <img 
+                      src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${p.id}.png`}
+                      alt=""
+                      className="w-8 h-8 object-contain"
+                    />
+                    <span className="font-bold text-slate-700">{p.name}</span>
+                  </div>
                   <div className="flex gap-1">
                     {gameVersion === 'champions' && !p.availableIn?.includes('champions') && (
                       <span className="text-[10px] font-bold text-slate-500 bg-slate-200 px-1.5 py-0.5 rounded mr-1">未実装</span>
