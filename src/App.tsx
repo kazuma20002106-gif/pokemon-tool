@@ -332,31 +332,59 @@ const App: React.FC = () => {
       </main>
 
       {/* 自陣登録用ボトムバー */}
-      <div className="fixed bottom-0 w-full bg-white/90 backdrop-blur-md border-t border-slate-200 p-3 shadow-[0_-8px_20px_-5px_rgba(0,0,0,0.05)] z-20">
+      <div className="fixed bottom-0 w-full bg-white/90 backdrop-blur-md border-t border-slate-200 p-3 shadow-[0_-8px_20px_-5px_rgba(0,0,0,0.05)] z-30">
         <div className="max-w-md mx-auto relative">
           <div className="flex items-center justify-between mb-1">
             <p className="text-[11px] font-bold text-indigo-600 flex items-center">
               <Plus className="w-3 h-3 mr-1" /> パーティに追加
             </p>
           </div>
+          
+          {/* ボトムバーのサジェストドロップダウン (上方向に展開) */}
+          {showDropdown && searchQuery && filteredPokemon.length > 0 && (
+            <div className="absolute bottom-full mb-2 w-full bg-white border border-slate-200 rounded-xl shadow-xl max-h-60 overflow-y-auto">
+              {filteredPokemon.map((p) => (
+                <button
+                  key={p.id}
+                  className="w-full text-left p-3 hover:bg-slate-50 active:bg-slate-100 border-b border-slate-100 last:border-0 flex justify-between items-center transition-colors"
+                  onClick={() => {
+                    handleAddMyPokemon(p);
+                    setSearchQuery('');
+                    setShowDropdown(false);
+                    (document.activeElement as HTMLElement)?.blur();
+                  }}
+                >
+                  <span className="font-bold text-slate-700">{p.name}</span>
+                  <div className="flex gap-1">
+                    {p.types.map(t => <TypeBadge key={t} type={t} />)}
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+
           <div className="relative">
             <input
               id="team-add-input"
               type="text"
-              className="w-full p-2.5 pl-9 border-2 border-indigo-100 rounded-xl bg-indigo-50/50 text-sm font-medium text-slate-700 focus:ring-4 focus:ring-indigo-100 focus:border-indigo-300 outline-none transition-all placeholder:text-indigo-300"
+              className="w-full p-2.5 pl-9 pr-12 border-2 border-indigo-100 rounded-xl bg-indigo-50/50 text-sm font-medium text-slate-700 focus:ring-4 focus:ring-indigo-100 focus:border-indigo-300 outline-none transition-all placeholder:text-indigo-300"
               placeholder={`${gameVersion === 'champions' ? 'チャンピオンズ' : 'SV'}のポケモン名...`}
+              value={searchQuery}
               onChange={(e) => {
-                const val = e.target.value;
-                if (val.length > 0) {
-                  const found = pokemonData.find(p => p.name.startsWith(val) || p.name.includes(val));
-                  if (found) {
-                    handleAddMyPokemon(found);
-                    e.target.value = '';
-                  }
-                }
+                setSearchQuery(e.target.value);
+                setShowDropdown(true);
               }}
+              onFocus={() => setShowDropdown(true)}
             />
-            <Search className="w-4 h-4 absolute left-3 top-3 text-indigo-400" />
+            <Search className="w-4 h-4 absolute left-3 top-3.5 text-indigo-400" />
+            {searchQuery && (
+              <button 
+                onClick={() => { setSearchQuery(''); }}
+                className="absolute right-3 top-3 text-slate-400 p-1 bg-slate-200 rounded-full w-5 h-5 flex items-center justify-center text-xs"
+              >
+                ×
+              </button>
+            )}
           </div>
         </div>
       </div>
