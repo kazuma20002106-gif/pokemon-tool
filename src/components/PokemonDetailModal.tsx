@@ -208,7 +208,7 @@ export const PokemonDetailModal: React.FC<Props> = ({ pokemon, onSave, onClose }
                           }, 200);
                         }}
                         placeholder="技を検索..."
-                        className="w-full p-2 pl-2 pr-8 text-sm bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-indigo-400 placeholder:text-slate-400"
+                        className={`w-full p-2 pl-2 ${currentMoveData && !isActive ? 'pr-14' : 'pr-8'} text-sm bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-indigo-400 placeholder:text-slate-400`}
                       />
                       {currentMoveData && !isActive && (
                         <div className="absolute right-7 top-2 pointer-events-none scale-75 origin-right">
@@ -231,7 +231,7 @@ export const PokemonDetailModal: React.FC<Props> = ({ pokemon, onSave, onClose }
                     </div>
 
                     {isActive && moveSearchQuery && (
-                      <div className="absolute z-50 w-[200%] sm:w-[150%] max-w-[280px] left-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-xl max-h-48 overflow-y-auto">
+                      <div className={`absolute z-50 w-[200%] sm:w-[150%] max-w-[280px] ${index % 2 === 1 ? 'right-0' : 'left-0'} mt-1 bg-white border border-slate-200 rounded-xl shadow-xl max-h-48 overflow-y-auto`}>
                         {getFilteredMoves(moveSearchQuery).length > 0 ? (
                           getFilteredMoves(moveSearchQuery).map(m => (
                             <button
@@ -248,13 +248,13 @@ export const PokemonDetailModal: React.FC<Props> = ({ pokemon, onSave, onClose }
                                 setActiveMoveIndex(null);
                               }}
                             >
-                              <span className="font-bold text-slate-700">{m.name}</span>
-                              <div className="flex gap-1 items-center">
-                                {unimplementedMoves.includes(m.name) && (
-                                  <span className="text-[10px] font-bold text-slate-500 bg-slate-200 px-1.5 py-0.5 rounded mr-1">未実装</span>
-                                )}
+                              <div className="flex items-center gap-2">
+                                <span className="font-bold text-slate-700">{m.name}</span>
                                 <TypeBadge type={m.type} />
                               </div>
+                              {unimplementedMoves.includes(m.name) && (
+                                <span className="text-[10px] bg-red-100 text-red-600 px-1 rounded ml-2">未実装</span>
+                              )}
                             </button>
                           ))
                         ) : (

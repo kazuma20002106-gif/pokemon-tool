@@ -1,4 +1,4 @@
-﻿import { TYPE_CHART } from './typeChart';
+import { TYPE_CHART } from './typeChart';
 
 export interface DamageResult {
   minDamage: number;
@@ -9,11 +9,11 @@ export interface DamageResult {
 }
 
 export const getEffectiveness = (moveType: string, targetTypes: string[]): number => {
-  if (!moveType || !TYPE_CHART[moveType]) return 1;
+  if (!moveType) return 1;
   let multiplier = 1;
   for (const tType of targetTypes) {
-    if (TYPE_CHART[moveType] && TYPE_CHART[moveType][tType] !== undefined) {
-      multiplier *= TYPE_CHART[moveType][tType];
+    if (TYPE_CHART[tType] && TYPE_CHART[tType][moveType] !== undefined) {
+      multiplier *= TYPE_CHART[tType][moveType];
     }
   }
   return multiplier;
