@@ -10,15 +10,27 @@ interface Props {
   opponent: Pokemon;
 }
 
-const InfoTooltip = ({ text, className = "w-48" }: { text: string, className?: string }) => (
-  <div className="group relative inline-flex items-center ml-1 cursor-help align-middle">
-    <Info className="w-3.5 h-3.5 text-slate-400 hover:text-slate-600 transition-colors" />
-    <div className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-2 ${className} p-2 bg-slate-800 text-white text-[10px] rounded shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-20 text-left font-normal leading-relaxed pointer-events-none`}>
-      {text}
-      <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-800"></div>
+const InfoTooltip = ({ text, className = "w-48" }: { text: string, className?: string }) => {
+  const [isOpen, setIsOpen] = React.useState(false);
+  return (
+    <div className="relative inline-flex items-center ml-1 align-middle">
+      <button 
+        type="button"
+        onClick={(e) => { e.preventDefault(); setIsOpen(!isOpen); }}
+        onBlur={() => setTimeout(() => setIsOpen(false), 200)}
+        className="text-slate-400 hover:text-slate-600 transition-colors p-1 -m-1"
+      >
+        <Info className="w-3.5 h-3.5" />
+      </button>
+      {isOpen && (
+        <div className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-2 ${className} p-2 bg-slate-800 text-white text-[10px] rounded shadow-xl z-20 text-left font-normal leading-relaxed pointer-events-none`}>
+          {text}
+          <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-800"></div>
+        </div>
+      )}
     </div>
-  </div>
-);
+  );
+};
 
 export const DamageCalculator: React.FC<Props> = ({ myTeam, opponent }) => {
   // Opponent defensive stats (assume 252 HP / 0 Def / 0 SpD as default for MVP, or just H252)

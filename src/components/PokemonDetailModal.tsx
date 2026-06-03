@@ -1,11 +1,35 @@
 import React, { useState } from 'react';
-import { X, Shield, Zap, Target, Activity, Heart, Swords } from 'lucide-react';
+import { X, Shield, Zap, Target, Activity, Heart, Swords, Info } from 'lucide-react';
 import movesData from '../data/moves.json';
 import learnsetsData from '../data/learnsets.json';
 import unimplementedMovesData from '../data/unimplemented_moves.json';
+import abilitiesData from '../data/abilities.json';
 
 const learnsets = learnsetsData as Record<string, string[]>;
 const unimplementedMoves = unimplementedMovesData as string[];
+const abilitiesDict = abilitiesData as Record<string, string>;
+
+const ClickTooltip = ({ text, className = "w-48" }: { text: string, className?: string }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  return (
+    <div className="relative inline-flex items-center ml-1 align-middle">
+      <button 
+        type="button"
+        onClick={(e) => { e.preventDefault(); setIsOpen(!isOpen); }}
+        onBlur={() => setTimeout(() => setIsOpen(false), 200)}
+        className="text-slate-400 hover:text-slate-600 transition-colors p-1 -m-1"
+      >
+        <Info className="w-3.5 h-3.5" />
+      </button>
+      {isOpen && (
+        <div className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-2 ${className} p-2 bg-slate-800 text-white text-[10px] rounded shadow-xl z-[60] text-left font-normal leading-relaxed pointer-events-none`}>
+          {text}
+          <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-800"></div>
+        </div>
+      )}
+    </div>
+  );
+};
 
 const TypeBadge = ({ type }: { type: string }) => {
   const colors: Record<string, string> = {
@@ -154,7 +178,12 @@ export const PokemonDetailModal: React.FC<Props> = ({ pokemon, onSave, onClose }
           {/* 特性 & 性格 */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-bold text-slate-500 mb-1">特性</label>
+              <label className="flex items-center text-xs font-bold text-slate-500 mb-1">
+                特性
+                {abilitiesDict[ability] && (
+                  <ClickTooltip text={abilitiesDict[ability]} className="w-56" />
+                )}
+              </label>
               <select 
                 value={ability} 
                 onChange={e => setAbility(e.target.value)}
@@ -241,9 +270,9 @@ export const PokemonDetailModal: React.FC<Props> = ({ pokemon, onSave, onClose }
                     </div>
 
                     {isActive && moveSearchQuery && (
-                      <div className={`absolute z-50 w-[200%] sm:w-[150%] max-w-[280px] ${index % 2 === 1 ? 'right-0' : 'left-0'} mt-1 bg-white border border-slate-200 rounded-xl shadow-xl max-h-48 overflow-y-auto`}>
+                      <div className={`absolute z-50 w-[200%] sm:w-[150%] max-w-[280px] ${index % 2 === 1 ? 'right-0' : 'left-0'} bottom-full mb-1 bg-white border border-slate-200 rounded-xl shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.3)] max-h-48 overflow-y-auto flex flex-col-reverse`}>
                         {getFilteredMoves(moveSearchQuery).length > 0 ? (
-                          getFilteredMoves(moveSearchQuery).map(m => (
+                          [...getFilteredMoves(moveSearchQuery)].reverse().map(m => (
                             <button
                               key={m.name}
                               className="w-full text-left p-2.5 hover:bg-slate-50 border-b border-slate-50 last:border-0 flex justify-between items-center text-sm transition-colors"
