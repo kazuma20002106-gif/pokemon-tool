@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import pokemonData from './data/pokemon.json';
-import { Search, ChevronUp, ChevronDown, Minus, User, Swords, Trash2, Plus } from 'lucide-react';
+import svData from './data/sv.json';
+import championsData from './data/champions.json';
+import { Search, ChevronUp, ChevronDown, Minus, User, Swords, Trash2, Plus, Gamepad2 } from 'lucide-react';
 
 interface Pokemon {
   id: number;
@@ -9,33 +10,70 @@ interface Pokemon {
   speed: number;
 }
 
+type GameVersion = 'champions' | 'sv';
+
 const App: React.FC = () => {
+  const [gameVersion, setGameVersion] = useState<GameVersion>('champions');
   const [myTeam, setMyTeam] = useState<(Pokemon | null)[]>(Array(6).fill(null));
   const [searchQuery, setSearchQuery] = useState('');
   const [opponent, setOpponent] = useState<Pokemon | null>(null);
   const [showDropdown, setShowDropdown] = useState(false);
 
+  const pokemonData = gameVersion === 'champions' ? championsData : svData;
+
   // Load from local storage
   useEffect(() => {
-    const savedTeam = localStorage.getItem('myPokemonTeam');
+    const savedVersion = localStorage.getItem('selectedGameVersion') as GameVersion;
+    if (savedVersion) {
+      setGameVersion(savedVersion);
+    }
+    
+    // 作品ごとに保存されたパーティを読み込む
+    const savedTeam = localStorage.getItem(`myPokemonTeam_${savedVersion || 'champions'}`);
     if (savedTeam) {
       try {
         setMyTeam(JSON.parse(savedTeam));
       } catch (e) {
         console.error("Failed to parse team from local storage", e);
       }
+    } else {
+      setMyTeam(Array(6).fill(null));
     }
   }, []);
+
+  // Save version
+  const handleVersionChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newVersion = e.target.value as GameVersion;
+    setGameVersion(newVersion);
+    localStorage.setItem('selectedGameVersion', newVersion);
+    
+    // Switch team data
+    const savedTeam = localStorage.getItem(`myPokemonTeam_${newVersion}`);
+    if (savedTeam) {
+      try {
+        setMyTeam(JSON.parse(savedTeam));
+      } catch (e) {
+        setMyTeam(Array(6).fill(null));
+      }
+    } else {
+      setMyTeam(Array(6).fill(null));
+    }
+    
+    // Clear opponent search
+    setOpponent(null);
+    setSearchQuery('');
+  };
 
   // Save to local storage
   const saveTeam = (team: (Pokemon | null)[]) => {
     setMyTeam(team);
-    localStorage.setItem('myPokemonTeam', JSON.stringify(team));
+    localStorage.setItem(`myPokemonTeam_${gameVersion}`, JSON.stringify(team));
   };
 
+  // Improved search handling (up to 8 results for better UX)
   const filteredPokemon = pokemonData.filter(p => 
     p.name.includes(searchQuery) || p.name.startsWith(searchQuery)
-  ).slice(0, 5); // Show top 5 matches
+  ).slice(0, 8);
 
   const handleSelectMyPokemon = (index: number, p: Pokemon) => {
     const newTeam = [...myTeam];
@@ -51,8 +89,19 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 pb-28 font-sans text-slate-800">
-      <header className="bg-gradient-to-r from-pokemon-red to-red-600 text-white p-4 shadow-lg sticky top-0 z-10 flex items-center justify-center">
-        <h1 className="text-xl font-black tracking-widest drop-shadow-md">POKÉMON BATTLE</h1>
+      <header className="bg-gradient-to-r from-pokemon-red to-red-600 text-white p-4 shadow-lg sticky top-0 z-10 flex items-center justify-between">
+        <h1 className="text-lg font-black tracking-widest drop-shadow-md">BATTLE HUB</h1>
+        <div className="flex items-center bg-white/20 rounded-lg px-2 py-1">
+          <Gamepad2 className="w-4 h-4 mr-2" />
+          <select 
+            value={gameVersion}
+            onChange={handleVersionChange}
+            className="bg-transparent text-sm font-bold text-white outline-none cursor-pointer appearance-none"
+          >
+            <option value="champions" className="text-slate-800">チャンピオンズ</option>
+            <option value="sv" className="text-slate-800">SV(スカーレット・バイオレット)</option>
+          </select>
+        </div>
       </header>
 
       <main className="p-4 max-w-md mx-auto space-y-6">
@@ -69,7 +118,7 @@ const App: React.FC = () => {
           </div>
           <div className="p-3 grid grid-cols-2 gap-3">
             {myTeam.map((p, i) => (
-              <div key={i} className="relative group transition-transform hover:scale-[1.02]">
+              <div key={i} className="relative group transition-transform active:scale-[0.98]">
                 {p ? (
                   <div className="border-2 border-indigo-100 bg-gradient-to-br from-indigo-50 to-white rounded-xl p-3 flex flex-col justify-between h-full relative shadow-sm">
                     <button 
@@ -81,15 +130,15 @@ const App: React.FC = () => {
                     <div className="text-sm font-bold text-slate-800 truncate">{p.name}</div>
                     <div className="mt-2 flex items-center justify-between">
                       <span className="text-[10px] font-bold text-indigo-500 bg-indigo-100 px-1.5 py-0.5 rounded">S: {p.speed}</span>
-                      <div className="flex gap-0.5">
+                      <div className="flex gap-0.5 max-w-[50%] flex-wrap justify-end">
                         {p.types.map((t, idx) => (
-                          <span key={idx} className="w-2 h-2 rounded-full bg-slate-300" title={t}></span>
+                          <span key={idx} className="text-[8px] px-1 py-0.5 bg-slate-200 text-slate-600 rounded-sm truncate">{t}</span>
                         ))}
                       </div>
                     </div>
                   </div>
                 ) : (
-                  <div className="border-2 border-dashed border-slate-200 hover:border-indigo-300 hover:bg-indigo-50/50 bg-slate-50 rounded-xl p-3 h-[72px] flex flex-col items-center justify-center cursor-pointer transition-colors" onClick={() => {
+                  <div className="border-2 border-dashed border-slate-200 hover:border-indigo-300 active:bg-indigo-50/50 bg-slate-50 rounded-xl p-3 h-[72px] flex flex-col items-center justify-center cursor-pointer transition-colors" onClick={() => {
                     const input = document.getElementById('team-add-input');
                     if (input) input.focus();
                   }}>
@@ -129,8 +178,10 @@ const App: React.FC = () => {
                     onClick={() => {
                       setSearchQuery('');
                       setOpponent(null);
+                      const input = document.querySelector('input');
+                      if(input) input.focus();
                     }}
-                    className="mr-3 text-slate-400 hover:text-slate-600"
+                    className="mr-3 text-slate-400 hover:text-slate-600 p-1"
                   >
                     ×
                   </button>
@@ -149,6 +200,8 @@ const App: React.FC = () => {
                           setOpponent(p);
                           setSearchQuery(p.name);
                           setShowDropdown(false);
+                          // スマホでキーボードを閉じる処理
+                          (document.activeElement as HTMLElement)?.blur();
                         }}
                       >
                         <span className="font-bold text-slate-700">{p.name}</span>
@@ -212,7 +265,7 @@ const App: React.FC = () => {
                     );
                   })}
                   {myTeam.every(p => p === null) && (
-                    <div className="text-center bg-slate-50 rounded-xl border border-dashed border-slate-200 py-8">
+                    <div className="text-center bg-slate-50 rounded-xl border border-dashed border-slate-200 py-8 mt-4">
                       <p className="text-sm font-medium text-slate-500">自陣のポケモンが登録されていません</p>
                       <p className="text-xs text-slate-400 mt-1">下のバーからポケモンを追加してください</p>
                     </div>
@@ -225,11 +278,11 @@ const App: React.FC = () => {
       </main>
 
       {/* 自陣登録用ボトムバー */}
-      <div className="fixed bottom-0 w-full bg-white/80 backdrop-blur-md border-t border-slate-200 p-4 shadow-[0_-8px_20px_-5px_rgba(0,0,0,0.05)] z-20">
-        <div className="max-w-md mx-auto">
-          <div className="flex items-center justify-between mb-2">
+      <div className="fixed bottom-0 w-full bg-white/90 backdrop-blur-md border-t border-slate-200 p-3 shadow-[0_-8px_20px_-5px_rgba(0,0,0,0.05)] z-20">
+        <div className="max-w-md mx-auto relative">
+          <div className="flex items-center justify-between mb-1">
             <p className="text-[11px] font-bold text-indigo-600 flex items-center">
-              <Plus className="w-3 h-3 mr-1" /> 自陣にポケモンを追加
+              <Plus className="w-3 h-3 mr-1" /> パーティに追加
             </p>
             <p className="text-[10px] font-medium text-slate-400">※空き枠に自動追加</p>
           </div>
@@ -237,8 +290,8 @@ const App: React.FC = () => {
             <input
               id="team-add-input"
               type="text"
-              className="w-full p-3 pl-10 border-2 border-indigo-100 rounded-xl bg-indigo-50/30 text-sm font-medium text-slate-700 focus:ring-4 focus:ring-indigo-100 focus:border-indigo-300 outline-none transition-all placeholder:text-indigo-300"
-              placeholder="ポケモンの名前を入力..."
+              className="w-full p-2.5 pl-9 border-2 border-indigo-100 rounded-xl bg-indigo-50/50 text-sm font-medium text-slate-700 focus:ring-4 focus:ring-indigo-100 focus:border-indigo-300 outline-none transition-all placeholder:text-indigo-300"
+              placeholder={`${gameVersion === 'champions' ? 'チャンピオンズ' : 'SV'}のポケモン名...`}
               onChange={(e) => {
                 const val = e.target.value;
                 if (val.length > 0) {
@@ -248,14 +301,14 @@ const App: React.FC = () => {
                     if (emptyIndex !== -1) {
                       handleSelectMyPokemon(emptyIndex, found);
                       e.target.value = '';
-                      // Optional: blur input after adding to prevent keyboard from staying open unnecessarily
+                      // Optional: close keyboard on mobile after adding
                       // e.target.blur();
                     }
                   }
                 }
               }}
             />
-            <Search className="w-5 h-5 absolute left-3.5 top-3 text-indigo-400" />
+            <Search className="w-4 h-4 absolute left-3 top-3 text-indigo-400" />
           </div>
         </div>
       </div>
