@@ -38,9 +38,11 @@ const StatBar = ({ label, value, max = 255 }: { label: string, value: number, ma
 const App: React.FC = () => {
   const [gameVersion, setGameVersion] = useState<GameVersion>('champions');
   const [myTeam, setMyTeam] = useState<(MyPokemon | null)[]>(Array(6).fill(null));
-  const [searchQuery, setSearchQuery] = useState('');
+  const [opponentSearchQuery, setOpponentSearchQuery] = useState('');
+  const [showOpponentDropdown, setShowOpponentDropdown] = useState(false);
+  const [myTeamSearchQuery, setMyTeamSearchQuery] = useState('');
+  const [showMyTeamDropdown, setShowMyTeamDropdown] = useState(false);
   const [opponent, setOpponent] = useState<Pokemon | null>(null);
-  const [showDropdown, setShowDropdown] = useState(false);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
 
   const pokemonData = (gameVersion === 'champions' ? championsData : svData) as Pokemon[];
@@ -71,7 +73,8 @@ const App: React.FC = () => {
       setMyTeam(Array(6).fill(null));
     }
     setOpponent(null);
-    setSearchQuery('');
+    setOpponentSearchQuery('');
+    setMyTeamSearchQuery('');
   };
 
   const saveTeam = (team: (MyPokemon | null)[]) => {
@@ -85,11 +88,15 @@ const App: React.FC = () => {
     );
   };
 
-  const normalizedQuery = hiraToKata(searchQuery);
+  const getFilteredPokemon = (query: string) => {
+    if (!query) return [];
+    const normalizedQuery = hiraToKata(query);
+    // ユーザーの要望により、前方一致（startsWith）のみを抽出する（中間に含まれるポケモンが出ないようにする）
+    return pokemonData.filter(p => p.name.startsWith(normalizedQuery)).slice(0, 8);
+  };
 
-  const startsWithMatches = pokemonData.filter(p => p.name.startsWith(normalizedQuery));
-  const includesMatches = pokemonData.filter(p => !p.name.startsWith(normalizedQuery) && p.name.includes(normalizedQuery));
-  const filteredPokemon = [...startsWithMatches, ...includesMatches].slice(0, 8);
+  const opponentFiltered = getFilteredPokemon(opponentSearchQuery);
+  const myTeamFiltered = getFilteredPokemon(myTeamSearchQuery);
 
   const handleAddMyPokemon = (base: Pokemon) => {
     const emptyIndex = myTeam.findIndex(p => p === null);
@@ -203,16 +210,16 @@ const App: React.FC = () => {
                   type="text"
                   className="w-full p-3 bg-transparent outline-none text-slate-800 font-medium placeholder:font-normal placeholder:text-slate-400"
                   placeholder="相手のポケモン名を入力..."
-                  value={searchQuery}
+                  value={opponentSearchQuery}
                   onChange={(e) => {
-                    setSearchQuery(e.target.value);
-                    setShowDropdown(true);
+                    setOpponentSearchQuery(e.target.value);
+                    setShowOpponentDropdown(true);
                   }}
-                  onFocus={() => setShowDropdown(true)}
+                  onFocus={() => setShowOpponentDropdown(true)}
                 />
-                {searchQuery && (
+                {opponentSearchQuery && (
                   <button 
-                    onClick={() => { setSearchQuery(''); setOpponent(null); }}
+                    onClick={() => { setOpponentSearchQuery(''); setOpponent(null); }}
                     className="mr-3 text-slate-400 p-1"
                   >
                     ×
@@ -220,17 +227,17 @@ const App: React.FC = () => {
                 )}
               </div>
 
-              {showDropdown && searchQuery && (
+              {showOpponentDropdown && opponentSearchQuery && (
                 <div className="absolute z-20 w-full mt-2 bg-white border border-slate-200 rounded-xl shadow-xl max-h-60 overflow-y-auto">
-                  {filteredPokemon.length > 0 ? (
-                    filteredPokemon.map((p) => (
+                  {opponentFiltered.length > 0 ? (
+                    opponentFiltered.map((p) => (
                       <button
                         key={p.id}
                         className="w-full text-left p-3 hover:bg-slate-50 border-b border-slate-100 flex justify-between items-center"
                         onClick={() => {
                           setOpponent(p);
-                          setSearchQuery(p.name);
-                          setShowDropdown(false);
+                          setOpponentSearchQuery(p.name);
+                          setShowOpponentDropdown(false);
                           (document.activeElement as HTMLElement)?.blur();
                         }}
                       >
@@ -349,16 +356,16 @@ const App: React.FC = () => {
           </div>
           
           {/* ボトムバーのサジェストドロップダウン (上方向に展開) */}
-          {showDropdown && searchQuery && filteredPokemon.length > 0 && (
+          {showMyTeamDropdown && myTeamSearchQuery && myTeamFiltered.length > 0 && (
             <div className="absolute bottom-full mb-2 w-full bg-white border border-slate-200 rounded-xl shadow-xl max-h-60 overflow-y-auto">
-              {filteredPokemon.map((p) => (
+              {myTeamFiltered.map((p) => (
                 <button
                   key={p.id}
                   className="w-full text-left p-3 hover:bg-slate-50 active:bg-slate-100 border-b border-slate-100 last:border-0 flex justify-between items-center transition-colors"
                   onClick={() => {
                     handleAddMyPokemon(p);
-                    setSearchQuery('');
-                    setShowDropdown(false);
+                    setMyTeamSearchQuery('');
+                    setShowMyTeamDropdown(false);
                     (document.activeElement as HTMLElement)?.blur();
                   }}
                 >
@@ -377,17 +384,17 @@ const App: React.FC = () => {
               type="text"
               className="w-full p-2.5 pl-9 pr-12 border-2 border-indigo-100 rounded-xl bg-indigo-50/50 text-sm font-medium text-slate-700 focus:ring-4 focus:ring-indigo-100 focus:border-indigo-300 outline-none transition-all placeholder:text-indigo-300"
               placeholder={`${gameVersion === 'champions' ? 'チャンピオンズ' : 'SV'}のポケモン名...`}
-              value={searchQuery}
+              value={myTeamSearchQuery}
               onChange={(e) => {
-                setSearchQuery(e.target.value);
-                setShowDropdown(true);
+                setMyTeamSearchQuery(e.target.value);
+                setShowMyTeamDropdown(true);
               }}
-              onFocus={() => setShowDropdown(true)}
+              onFocus={() => setShowMyTeamDropdown(true)}
             />
             <Search className="w-4 h-4 absolute left-3 top-3.5 text-indigo-400" />
-            {searchQuery && (
+            {myTeamSearchQuery && (
               <button 
-                onClick={() => { setSearchQuery(''); }}
+                onClick={() => { setMyTeamSearchQuery(''); }}
                 className="absolute right-3 top-3 text-slate-400 p-1 bg-slate-200 rounded-full w-5 h-5 flex items-center justify-center text-xs"
               >
                 ×
