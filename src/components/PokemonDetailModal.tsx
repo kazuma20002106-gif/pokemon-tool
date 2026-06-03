@@ -76,8 +76,10 @@ export const PokemonDetailModal: React.FC<Props> = ({ pokemon, onSave, onClose }
 
   const getFilteredMoves = (query: string) => {
     if (!query) return [];
-    const normalized = hiraToKata(query);
-    return movesData.filter(m => m.name.includes(normalized)).slice(0, 30);
+    const normalizedQuery = hiraToKata(query);
+    return movesData
+      .filter(m => hiraToKata(m.name).startsWith(normalizedQuery))
+      .slice(0, 30);
   };
 
   const totalEVs = Object.values(evs).reduce((a, b) => a + b, 0);
