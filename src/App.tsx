@@ -1,91 +1,120 @@
 import React, { useState, useEffect } from 'react';
 import svData from './data/sv.json';
 import championsData from './data/champions.json';
-import { Search, ChevronUp, ChevronDown, Minus, User, Swords, Trash2, Plus, Gamepad2 } from 'lucide-react';
-
-interface Pokemon {
-  id: number;
-  name: string;
-  types: string[];
-  speed: number;
-}
+import { Search, ChevronUp, ChevronDown, Minus, User, Swords, Trash2, Plus, Gamepad2, Settings2 } from 'lucide-react';
+import { PokemonDetailModal, Pokemon, MyPokemon, NATURES } from './components/PokemonDetailModal';
+import { getWeaknesses } from './utils/typeChart';
 
 type GameVersion = 'champions' | 'sv';
 
+const TypeBadge = ({ type }: { type: string }) => {
+  const colors: Record<string, string> = {
+    'ノーマル': 'bg-stone-400', 'ほのお': 'bg-red-500', 'みず': 'bg-blue-500', 'くさ': 'bg-green-500',
+    'でんき': 'bg-yellow-400', 'こおり': 'bg-cyan-300', 'かくとう': 'bg-orange-600', 'どく': 'bg-purple-500',
+    'じめん': 'bg-amber-600', 'ひこう': 'bg-sky-400', 'エスパー': 'bg-pink-500', 'むし': 'bg-lime-500',
+    'いわ': 'bg-yellow-600', 'ゴースト': 'bg-violet-600', 'ドラゴン': 'bg-indigo-600', 'あく': 'bg-zinc-700',
+    'はがね': 'bg-slate-400', 'フェアリー': 'bg-pink-300'
+  };
+  return (
+    <span className={`text-[10px] font-bold text-white px-1.5 py-0.5 rounded shadow-sm ${colors[type] || 'bg-slate-400'}`}>
+      {type}
+    </span>
+  );
+};
+
+const StatBar = ({ label, value, max = 255 }: { label: string, value: number, max?: number }) => (
+  <div className="flex items-center text-[10px] font-bold">
+    <span className="w-8 text-slate-500">{label}</span>
+    <span className="w-6 text-right mr-2 text-slate-700">{value}</span>
+    <div className="flex-grow h-2 bg-slate-200 rounded-full overflow-hidden">
+      <div 
+        className="h-full bg-gradient-to-r from-pokemon-red to-orange-400 rounded-full"
+        style={{ width: `${Math.min(100, (value / max) * 100)}%` }}
+      />
+    </div>
+  </div>
+);
+
 const App: React.FC = () => {
   const [gameVersion, setGameVersion] = useState<GameVersion>('champions');
-  const [myTeam, setMyTeam] = useState<(Pokemon | null)[]>(Array(6).fill(null));
+  const [myTeam, setMyTeam] = useState<(MyPokemon | null)[]>(Array(6).fill(null));
   const [searchQuery, setSearchQuery] = useState('');
   const [opponent, setOpponent] = useState<Pokemon | null>(null);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
 
-  const pokemonData = gameVersion === 'champions' ? championsData : svData;
+  const pokemonData = (gameVersion === 'champions' ? championsData : svData) as Pokemon[];
 
-  // Load from local storage
   useEffect(() => {
     const savedVersion = localStorage.getItem('selectedGameVersion') as GameVersion;
-    if (savedVersion) {
-      setGameVersion(savedVersion);
-    }
+    if (savedVersion) setGameVersion(savedVersion);
     
-    // 作品ごとに保存されたパーティを読み込む
-    const savedTeam = localStorage.getItem(`myPokemonTeam_${savedVersion || 'champions'}`);
+    const savedTeam = localStorage.getItem(`myPokemonTeamV2_${savedVersion || 'champions'}`);
     if (savedTeam) {
       try {
         setMyTeam(JSON.parse(savedTeam));
       } catch (e) {
-        console.error("Failed to parse team from local storage", e);
+        console.error("Failed to parse team", e);
       }
-    } else {
-      setMyTeam(Array(6).fill(null));
     }
   }, []);
 
-  // Save version
   const handleVersionChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newVersion = e.target.value as GameVersion;
     setGameVersion(newVersion);
     localStorage.setItem('selectedGameVersion', newVersion);
     
-    // Switch team data
-    const savedTeam = localStorage.getItem(`myPokemonTeam_${newVersion}`);
+    const savedTeam = localStorage.getItem(`myPokemonTeamV2_${newVersion}`);
     if (savedTeam) {
-      try {
-        setMyTeam(JSON.parse(savedTeam));
-      } catch (e) {
-        setMyTeam(Array(6).fill(null));
-      }
+      try { setMyTeam(JSON.parse(savedTeam)); } catch (e) { setMyTeam(Array(6).fill(null)); }
     } else {
       setMyTeam(Array(6).fill(null));
     }
-    
-    // Clear opponent search
     setOpponent(null);
     setSearchQuery('');
   };
 
-  // Save to local storage
-  const saveTeam = (team: (Pokemon | null)[]) => {
+  const saveTeam = (team: (MyPokemon | null)[]) => {
     setMyTeam(team);
-    localStorage.setItem(`myPokemonTeam_${gameVersion}`, JSON.stringify(team));
+    localStorage.setItem(`myPokemonTeamV2_${gameVersion}`, JSON.stringify(team));
   };
 
-  // Improved search handling (up to 8 results for better UX)
   const filteredPokemon = pokemonData.filter(p => 
     p.name.includes(searchQuery) || p.name.startsWith(searchQuery)
   ).slice(0, 8);
 
-  const handleSelectMyPokemon = (index: number, p: Pokemon) => {
-    const newTeam = [...myTeam];
-    newTeam[index] = p;
-    saveTeam(newTeam);
+  const handleAddMyPokemon = (base: Pokemon) => {
+    const emptyIndex = myTeam.findIndex(p => p === null);
+    if (emptyIndex !== -1) {
+      const newPokemon: MyPokemon = {
+        base,
+        evs: { hp: 0, attack: 0, defense: 0, spAttack: 0, spDefense: 0, speed: 0 },
+        nature: NATURES[0],
+        ability: base.abilities[0]
+      };
+      const newTeam = [...myTeam];
+      newTeam[emptyIndex] = newPokemon;
+      saveTeam(newTeam);
+      setEditingIndex(emptyIndex); // 追加後すぐに詳細設定を開く
+    }
   };
 
-  const handleRemoveMyPokemon = (index: number) => {
-    const newTeam = [...myTeam];
-    newTeam[index] = null;
-    saveTeam(newTeam);
+  const calculateActualSpeed = (myPoke: MyPokemon) => {
+    // 実際の素早さ計算 (レベル50想定)
+    // 実数値 = ((種族値×2 + 個体値 + 努力値/4) × 50 / 100 + 5) × 性格補正
+    const base = myPoke.base.stats.speed;
+    const iv = 31; // 個体値は31固定
+    const ev = myPoke.evs.speed;
+    let stat = Math.floor((base * 2 + iv + Math.floor(ev / 4)) * 50 / 100 + 5);
+    
+    // 性格補正
+    if (myPoke.nature.includes('速↑')) stat = Math.floor(stat * 1.1);
+    if (myPoke.nature.includes('速↓')) stat = Math.floor(stat * 0.9);
+    
+    return stat;
   };
+
+  const opponentWeaknesses = opponent ? getWeaknesses(opponent.types) : { weak: [], resist: [], immune: [] };
 
   return (
     <div className="min-h-screen bg-slate-50 pb-28 font-sans text-slate-800">
@@ -120,25 +149,25 @@ const App: React.FC = () => {
             {myTeam.map((p, i) => (
               <div key={i} className="relative group transition-transform active:scale-[0.98]">
                 {p ? (
-                  <div className="border-2 border-indigo-100 bg-gradient-to-br from-indigo-50 to-white rounded-xl p-3 flex flex-col justify-between h-full relative shadow-sm">
+                  <div 
+                    onClick={() => setEditingIndex(i)}
+                    className="border-2 border-indigo-100 bg-gradient-to-br from-indigo-50 to-white hover:border-indigo-300 rounded-xl p-3 flex flex-col justify-between h-full relative shadow-sm cursor-pointer"
+                  >
                     <button 
-                      onClick={() => handleRemoveMyPokemon(i)}
+                      onClick={(e) => { e.stopPropagation(); const newTeam = [...myTeam]; newTeam[i] = null; saveTeam(newTeam); }}
                       className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs shadow-md transition-colors z-10"
                     >
                       <Trash2 className="w-3 h-3" />
                     </button>
-                    <div className="text-sm font-bold text-slate-800 truncate">{p.name}</div>
+                    <div className="text-sm font-bold text-slate-800 truncate">{p.base.name}</div>
+                    <div className="text-[10px] text-slate-500 truncate mt-0.5">{p.ability} / {p.nature.split(' ')[0]}</div>
                     <div className="mt-2 flex items-center justify-between">
-                      <span className="text-[10px] font-bold text-indigo-500 bg-indigo-100 px-1.5 py-0.5 rounded">S: {p.speed}</span>
-                      <div className="flex gap-0.5 max-w-[50%] flex-wrap justify-end">
-                        {p.types.map((t, idx) => (
-                          <span key={idx} className="text-[8px] px-1 py-0.5 bg-slate-200 text-slate-600 rounded-sm truncate">{t}</span>
-                        ))}
-                      </div>
+                      <span className="text-[10px] font-bold text-indigo-500 bg-indigo-100 px-1.5 py-0.5 rounded">実速: {calculateActualSpeed(p)}</span>
+                      <Settings2 className="w-4 h-4 text-indigo-300" />
                     </div>
                   </div>
                 ) : (
-                  <div className="border-2 border-dashed border-slate-200 hover:border-indigo-300 active:bg-indigo-50/50 bg-slate-50 rounded-xl p-3 h-[72px] flex flex-col items-center justify-center cursor-pointer transition-colors" onClick={() => {
+                  <div className="border-2 border-dashed border-slate-200 hover:border-indigo-300 active:bg-indigo-50/50 bg-slate-50 rounded-xl p-3 h-[78px] flex flex-col items-center justify-center cursor-pointer transition-colors" onClick={() => {
                     const input = document.getElementById('team-add-input');
                     if (input) input.focus();
                   }}>
@@ -151,11 +180,11 @@ const App: React.FC = () => {
           </div>
         </section>
 
-        {/* インクリメンタルサーチ & 素早さ比較 */}
+        {/* 相手検索 & 比較エリア */}
         <section className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
           <div className="bg-slate-100 p-3 border-b border-slate-200 flex items-center">
             <Swords className="w-5 h-5 mr-2 text-slate-600" />
-            <h2 className="font-bold text-slate-700">対戦相手 (素早さ比較)</h2>
+            <h2 className="font-bold text-slate-700">対戦相手 (分析と素早さ比較)</h2>
           </div>
           
           <div className="p-4">
@@ -175,101 +204,126 @@ const App: React.FC = () => {
                 />
                 {searchQuery && (
                   <button 
-                    onClick={() => {
-                      setSearchQuery('');
-                      setOpponent(null);
-                      const input = document.querySelector('input');
-                      if(input) input.focus();
-                    }}
-                    className="mr-3 text-slate-400 hover:text-slate-600 p-1"
+                    onClick={() => { setSearchQuery(''); setOpponent(null); }}
+                    className="mr-3 text-slate-400 p-1"
                   >
                     ×
                   </button>
                 )}
               </div>
 
-              {/* サジェストドロップダウン */}
               {showDropdown && searchQuery && (
-                <div className="absolute z-20 w-full mt-2 bg-white border border-slate-200 rounded-xl shadow-xl max-h-60 overflow-y-auto overflow-x-hidden">
+                <div className="absolute z-20 w-full mt-2 bg-white border border-slate-200 rounded-xl shadow-xl max-h-60 overflow-y-auto">
                   {filteredPokemon.length > 0 ? (
                     filteredPokemon.map((p) => (
                       <button
                         key={p.id}
-                        className="w-full text-left p-3 hover:bg-slate-50 active:bg-slate-100 border-b border-slate-100 last:border-0 flex justify-between items-center transition-colors"
+                        className="w-full text-left p-3 hover:bg-slate-50 border-b border-slate-100 flex justify-between items-center"
                         onClick={() => {
                           setOpponent(p);
                           setSearchQuery(p.name);
                           setShowDropdown(false);
-                          // スマホでキーボードを閉じる処理
                           (document.activeElement as HTMLElement)?.blur();
                         }}
                       >
                         <span className="font-bold text-slate-700">{p.name}</span>
-                        <span className="text-xs font-bold text-slate-500 bg-slate-100 px-2 py-1 rounded-md">S: {p.speed}</span>
+                        <div className="flex gap-1">
+                          {p.types.map(t => <TypeBadge key={t} type={t} />)}
+                        </div>
                       </button>
                     ))
                   ) : (
-                    <div className="p-4 text-slate-400 text-sm font-medium text-center">見つかりませんでした</div>
+                    <div className="p-4 text-slate-400 text-sm text-center">見つかりませんでした</div>
                   )}
                 </div>
               )}
             </div>
 
-            {/* 爆速比較UI */}
             {opponent && (
               <div className="mt-6 animate-[fadeIn_0.3s_ease-out]">
-                <div className="flex justify-between items-end mb-4 px-1">
-                  <h3 className="text-xl font-black text-slate-800 flex items-center gap-2">
-                    {opponent.name}
-                    <span className="text-xs font-bold text-slate-500 bg-slate-100 px-2 py-1 rounded-md">
-                      S: {opponent.speed}
-                    </span>
-                  </h3>
+                {/* 相手の詳細ステータス */}
+                <div className="bg-slate-50 rounded-xl p-4 border border-slate-200 mb-4">
+                  <div className="flex justify-between items-start mb-3">
+                    <div>
+                      <h3 className="text-xl font-black text-slate-800">{opponent.name}</h3>
+                      <div className="flex gap-1 mt-1">
+                        {opponent.types.map(t => <TypeBadge key={t} type={t} />)}
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-[10px] text-slate-500 font-bold mb-1">想定特性</div>
+                      <div className="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded">
+                        {opponent.abilities.join(' / ')}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-1 mb-4">
+                    <StatBar label="HP" value={opponent.stats.hp} />
+                    <StatBar label="攻撃" value={opponent.stats.attack} />
+                    <StatBar label="防御" value={opponent.stats.defense} />
+                    <StatBar label="特攻" value={opponent.stats.spAttack} />
+                    <StatBar label="特防" value={opponent.stats.spDefense} />
+                    <StatBar label="素早" value={opponent.stats.speed} />
+                  </div>
+
+                  {/* 弱点表示 */}
+                  <div className="border-t border-slate-200 pt-3">
+                    <div className="text-[10px] font-bold text-slate-500 mb-1">弱点 (ダメージ2倍以上)</div>
+                    <div className="flex flex-wrap gap-1">
+                      {opponentWeaknesses.weak.length > 0 
+                        ? opponentWeaknesses.weak.map(t => <TypeBadge key={t} type={t} />)
+                        : <span className="text-xs text-slate-400">なし</span>
+                      }
+                    </div>
+                  </div>
                 </div>
                 
+                {/* 爆速素早さ比較 */}
                 <div className="space-y-2">
+                  <h4 className="text-xs font-bold text-slate-500 ml-1">自陣との素早さ比較 (相手の無振〜最速想定)</h4>
                   {myTeam.map((myPoke, i) => {
                     if (!myPoke) return null;
                     
-                    const isFaster = myPoke.speed > opponent.speed;
-                    const isTie = myPoke.speed === opponent.speed;
+                    const mySpeed = calculateActualSpeed(myPoke);
+                    // 相手の素早さ(無振り) = (種族値×2 + 31) × 50 / 100 + 5
+                    const oppMinSpeed = Math.floor((opponent.stats.speed * 2 + 31) * 50 / 100 + 5);
+                    // 相手の素早さ(最速) = ((種族値×2 + 31 + 252/4) × 50 / 100 + 5) × 1.1
+                    const oppMaxSpeed = Math.floor(Math.floor((opponent.stats.speed * 2 + 31 + 63) * 50 / 100 + 5) * 1.1);
+                    
+                    const isFasterThanMax = mySpeed > oppMaxSpeed;
+                    const isSlowerThanMin = mySpeed < oppMinSpeed;
                     
                     let bgClass = "bg-slate-50 border-slate-200";
                     let icon = <Minus className="w-5 h-5 text-slate-400" />;
-                    let statusText = "同速";
+                    let statusText = "乱数/振り方次第";
                     let textColor = "text-slate-500";
                     
-                    if (isFaster) {
+                    if (isFasterThanMax) {
                       bgClass = "bg-gradient-to-r from-blue-50 to-blue-100/50 border-blue-200";
                       icon = <ChevronUp className="w-6 h-6 text-blue-600 drop-shadow-sm" />;
-                      statusText = "速い";
+                      statusText = "絶対抜ける";
                       textColor = "text-blue-700";
-                    } else if (!isTie) {
+                    } else if (isSlowerThanMin) {
                       bgClass = "bg-gradient-to-r from-red-50 to-red-100/50 border-red-200";
                       icon = <ChevronDown className="w-6 h-6 text-red-500 drop-shadow-sm" />;
-                      statusText = "遅い";
+                      statusText = "絶対抜かれる";
                       textColor = "text-red-600";
                     }
 
                     return (
                       <div key={i} className={`flex items-center justify-between p-3 rounded-xl border ${bgClass} shadow-sm transition-all`}>
                         <div className="flex items-center gap-3">
-                          <div className="font-bold text-slate-800 w-28 truncate">{myPoke.name}</div>
-                          <div className="text-[10px] font-bold text-slate-500 bg-white/50 px-1.5 py-0.5 rounded">S: {myPoke.speed}</div>
+                          <div className="font-bold text-slate-800 w-28 truncate">{myPoke.base.name}</div>
+                          <div className="text-[10px] font-bold text-slate-500 bg-white/50 px-1.5 py-0.5 rounded">実速: {mySpeed}</div>
                         </div>
                         <div className={`flex items-center font-black ${textColor}`}>
-                          <span className="text-sm mr-1 tracking-wide">{statusText}</span>
+                          <span className="text-xs mr-1 tracking-wide">{statusText}</span>
                           {icon}
                         </div>
                       </div>
                     );
                   })}
-                  {myTeam.every(p => p === null) && (
-                    <div className="text-center bg-slate-50 rounded-xl border border-dashed border-slate-200 py-8 mt-4">
-                      <p className="text-sm font-medium text-slate-500">自陣のポケモンが登録されていません</p>
-                      <p className="text-xs text-slate-400 mt-1">下のバーからポケモンを追加してください</p>
-                    </div>
-                  )}
                 </div>
               </div>
             )}
@@ -284,7 +338,6 @@ const App: React.FC = () => {
             <p className="text-[11px] font-bold text-indigo-600 flex items-center">
               <Plus className="w-3 h-3 mr-1" /> パーティに追加
             </p>
-            <p className="text-[10px] font-medium text-slate-400">※空き枠に自動追加</p>
           </div>
           <div className="relative">
             <input
@@ -297,13 +350,8 @@ const App: React.FC = () => {
                 if (val.length > 0) {
                   const found = pokemonData.find(p => p.name.startsWith(val) || p.name.includes(val));
                   if (found) {
-                    const emptyIndex = myTeam.findIndex(p => p === null);
-                    if (emptyIndex !== -1) {
-                      handleSelectMyPokemon(emptyIndex, found);
-                      e.target.value = '';
-                      // Optional: close keyboard on mobile after adding
-                      // e.target.blur();
-                    }
+                    handleAddMyPokemon(found);
+                    e.target.value = '';
                   }
                 }
               }}
@@ -312,6 +360,20 @@ const App: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* モーダル */}
+      {editingIndex !== null && myTeam[editingIndex] && (
+        <PokemonDetailModal 
+          pokemon={myTeam[editingIndex]!}
+          onSave={(updated) => {
+            const newTeam = [...myTeam];
+            newTeam[editingIndex] = updated;
+            saveTeam(newTeam);
+            setEditingIndex(null);
+          }}
+          onClose={() => setEditingIndex(null)}
+        />
+      )}
     </div>
   );
 };
