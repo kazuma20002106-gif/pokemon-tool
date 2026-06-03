@@ -189,9 +189,14 @@ const App: React.FC = () => {
                     </button>
                     <div className="text-sm font-bold text-slate-800 truncate">{p.base.name}</div>
                     <div className="text-[10px] text-slate-500 truncate mt-0.5">{p.ability} / {p.nature.split(' ')[0]}</div>
-                    <div className="mt-2 flex items-center justify-between">
-                      <span className="text-[10px] font-bold text-indigo-500 bg-indigo-100 px-1.5 py-0.5 rounded">実速: {calculateActualSpeed(p)}</span>
-                      <Settings2 className="w-4 h-4 text-indigo-300" />
+                    <div className="mt-2 pt-2 border-t border-indigo-100/50 flex flex-col gap-1.5">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-bold text-indigo-500 bg-indigo-100 px-1.5 py-0.5 rounded">実速: {calculateActualSpeed(p)}</span>
+                      </div>
+                      <div className="text-[10px] font-bold text-white bg-indigo-500 hover:bg-indigo-600 rounded p-1.5 flex items-center justify-center transition-colors shadow-sm w-full">
+                        <Settings2 className="w-3 h-3 mr-1" />
+                        技・ステータス設定
+                      </div>
                     </div>
                   </div>
                 ) : (
@@ -246,7 +251,7 @@ const App: React.FC = () => {
                     opponentFiltered.map((p) => (
                       <button
                         key={p.id}
-                        className="w-full text-left p-3 hover:bg-slate-50 border-b border-slate-100 flex justify-between items-center"
+                        className={`w-full text-left p-3 hover:bg-slate-50 border-b border-slate-100 flex justify-between items-center ${gameVersion === 'champions' && !p.availableIn?.includes('champions') ? 'opacity-60' : ''}`}
                         onClick={() => {
                           setOpponent(p);
                           setOpponentSearchQuery(p.name);
@@ -256,6 +261,9 @@ const App: React.FC = () => {
                       >
                         <span className="font-bold text-slate-700">{p.name}</span>
                         <div className="flex gap-1">
+                          {gameVersion === 'champions' && !p.availableIn?.includes('champions') && (
+                            <span className="text-[10px] font-bold text-slate-500 bg-slate-200 px-1.5 py-0.5 rounded mr-1">未実装</span>
+                          )}
                           {p.types.map(t => <TypeBadge key={t} type={t} />)}
                         </div>
                       </button>
