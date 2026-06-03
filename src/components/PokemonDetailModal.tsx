@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { X, Shield, Zap, Target, Activity, Heart, Swords } from 'lucide-react';
+import movesData from '../data/moves.json';
 
 export interface Stats { hp: number; attack: number; defense: number; spAttack: number; spDefense: number; speed: number; }
 export interface Pokemon { 
@@ -16,6 +17,7 @@ export interface MyPokemon {
   evs: Stats;
   nature: string;
   ability: string;
+  moves: (string | null)[];
 }
 
 interface Props {
@@ -46,6 +48,7 @@ export const PokemonDetailModal: React.FC<Props> = ({ pokemon, onSave, onClose }
   const [evs, setEvs] = useState<Stats>({ ...pokemon.evs });
   const [nature, setNature] = useState(pokemon.nature || NATURES[0]);
   const [ability, setAbility] = useState(pokemon.ability || pokemon.base.abilities[0]);
+  const [moves, setMoves] = useState<(string | null)[]>(pokemon.moves || [null, null, null, null]);
 
   const totalEVs = Object.values(evs).reduce((a, b) => a + b, 0);
   const remainingEVs = 508 - totalEVs;
@@ -111,6 +114,30 @@ export const PokemonDetailModal: React.FC<Props> = ({ pokemon, onSave, onClose }
             </div>
           </div>
 
+          
+          {/* 技選択 */}
+          <div>
+            <label className="block text-xs font-bold text-slate-500 mb-2">技 (最大4つ)</label>
+            <div className="grid grid-cols-2 gap-2">
+              {[0, 1, 2, 3].map(index => (
+                <div key={index} className="relative">
+                  <select
+                    value={moves[index] || ''}
+                    onChange={e => {
+                      const newMoves = [...moves];
+                      newMoves[index] = e.target.value === '' ? null : e.target.value;
+                      setMoves(newMoves);
+                    }}
+                    className="w-full p-2 text-sm bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-indigo-400"
+                  >
+                    <option value="">-- 未選択 --</option>
+                    {movesData.map(m => <option key={m.name} value={m.name}>{m.name}</option>)}
+                  </select>
+                </div>
+              ))}
+            </div>
+          </div>
+
           {/* 努力値スマート入力 */}
           <div>
             <div className="flex items-end justify-between mb-2">
@@ -153,10 +180,14 @@ export const PokemonDetailModal: React.FC<Props> = ({ pokemon, onSave, onClose }
           </div>
         </div>
 
+
+        <datalist id="all-moves-list">
+          {movesData.map(m => <option key={m.name} value={m.name} />)}
+        </datalist>
         <div className="p-4 bg-slate-50 border-t">
           <button 
             onClick={() => {
-              onSave({ ...pokemon, evs, nature, ability });
+              onSave({ ...pokemon, evs, nature, ability, moves });
               onClose();
             }}
             className="w-full py-3 bg-gradient-to-r from-indigo-500 to-indigo-600 text-white rounded-xl font-bold shadow-md active:scale-[0.98] transition-transform"

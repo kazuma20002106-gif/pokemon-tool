@@ -105,7 +105,8 @@ const App: React.FC = () => {
         base,
         evs: { hp: 0, attack: 0, defense: 0, spAttack: 0, spDefense: 0, speed: 0 },
         nature: NATURES[0],
-        ability: base.abilities[0]
+        ability: base.abilities[0],
+        moves: [null, null, null, null]
       };
       const newTeam = [...myTeam];
       newTeam[emptyIndex] = newPokemon;
@@ -352,6 +353,9 @@ const App: React.FC = () => {
                   })}
                 </div>
               </div>
+
+                {/* ダメージ計算エリア */}
+                <DamageCalculator myTeam={myTeam} opponent={opponent} />
             )}
           </div>
         </section>
