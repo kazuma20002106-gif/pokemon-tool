@@ -122,18 +122,31 @@ export const PokemonDetailModal: React.FC<Props> = ({ pokemon, onSave, onClose }
             <div className="grid grid-cols-2 gap-2">
               {[0, 1, 2, 3].map(index => (
                 <div key={index} className="relative">
-                  <select
-                    value={moves[index] || ''}
+                  <input
+                    list="all-moves-list"
+                    value={moves[index] ? `${moves[index]} - ${movesData.find(m => m.name === moves[index])?.type || ''}` : ''}
                     onChange={e => {
                       const newMoves = [...moves];
-                      newMoves[index] = e.target.value === '' ? null : e.target.value;
+                      const rawVal = e.target.value;
+                      const parsedMove = rawVal ? rawVal.split(' - ')[0].trim() : null;
+                      newMoves[index] = parsedMove;
                       setMoves(newMoves);
                     }}
-                    className="w-full p-2 text-sm bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-indigo-400"
-                  >
-                    <option value="">-- 未選択 --</option>
-                    {movesData.map(m => <option key={m.name} value={m.name}>{m.name}</option>)}
-                  </select>
+                    placeholder="技を検索..."
+                    className="w-full p-2 text-sm bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-indigo-400 placeholder:text-slate-400"
+                  />
+                  {moves[index] && (
+                    <button 
+                      onClick={() => {
+                        const newMoves = [...moves];
+                        newMoves[index] = null;
+                        setMoves(newMoves);
+                      }}
+                      className="absolute right-2 top-2 text-slate-400 hover:text-slate-600 p-0.5"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  )}
                 </div>
               ))}
             </div>

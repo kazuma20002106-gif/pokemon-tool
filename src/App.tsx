@@ -384,7 +384,7 @@ const App: React.FC = () => {
               {myTeamFiltered.map((p) => (
                 <button
                   key={p.id}
-                  className="w-full text-left p-3 hover:bg-slate-50 active:bg-slate-100 border-b border-slate-100 last:border-0 flex justify-between items-center transition-colors"
+                  className={`w-full text-left p-3 hover:bg-slate-50 active:bg-slate-100 border-b border-slate-100 last:border-0 flex justify-between items-center transition-colors ${gameVersion === 'champions' && !p.availableIn?.includes('champions') ? 'opacity-60' : ''}`}
                   onClick={() => {
                     handleAddMyPokemon(p);
                     setMyTeamSearchQuery('');
@@ -394,6 +394,9 @@ const App: React.FC = () => {
                 >
                   <span className="font-bold text-slate-700">{p.name}</span>
                   <div className="flex gap-1">
+                    {gameVersion === 'champions' && !p.availableIn?.includes('champions') && (
+                      <span className="text-[10px] font-bold text-slate-500 bg-slate-200 px-1.5 py-0.5 rounded mr-1">未実装</span>
+                    )}
                     {p.types.map(t => <TypeBadge key={t} type={t} />)}
                   </div>
                 </button>
