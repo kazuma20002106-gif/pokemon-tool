@@ -79,9 +79,17 @@ const App: React.FC = () => {
     localStorage.setItem(`myPokemonTeamV2_${gameVersion}`, JSON.stringify(team));
   };
 
-  const filteredPokemon = pokemonData.filter(p => 
-    p.name.includes(searchQuery) || p.name.startsWith(searchQuery)
-  ).slice(0, 8);
+  const hiraToKata = (str: string) => {
+    return str.replace(/[\u3041-\u3096]/g, match => 
+      String.fromCharCode(match.charCodeAt(0) + 0x60)
+    );
+  };
+
+  const normalizedQuery = hiraToKata(searchQuery);
+
+  const startsWithMatches = pokemonData.filter(p => p.name.startsWith(normalizedQuery));
+  const includesMatches = pokemonData.filter(p => !p.name.startsWith(normalizedQuery) && p.name.includes(normalizedQuery));
+  const filteredPokemon = [...startsWithMatches, ...includesMatches].slice(0, 8);
 
   const handleAddMyPokemon = (base: Pokemon) => {
     const emptyIndex = myTeam.findIndex(p => p === null);
