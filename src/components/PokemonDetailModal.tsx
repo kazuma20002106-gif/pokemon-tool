@@ -1,6 +1,11 @@
 import React, { useState } from 'react';
 import { X, Shield, Zap, Target, Activity, Heart, Swords } from 'lucide-react';
 import movesData from '../data/moves.json';
+import learnsetsData from '../data/learnsets.json';
+import unimplementedMovesData from '../data/unimplemented_moves.json';
+
+const learnsets = learnsetsData as Record<string, string[]>;
+const unimplementedMoves = unimplementedMovesData as string[];
 
 const TypeBadge = ({ type }: { type: string }) => {
   const colors: Record<string, string> = {
@@ -73,11 +78,26 @@ export const PokemonDetailModal: React.FC<Props> = ({ pokemon, onSave, onClose }
   const [moves, setMoves] = useState<(string | null)[]>(pokemon.moves || [null, null, null, null]);
   const [activeMoveIndex, setActiveMoveIndex] = useState<number | null>(null);
   const [moveSearchQuery, setMoveSearchQuery] = useState('');
+  const [showUnimplemented, setShowUnimplemented] = useState(false);
 
   const getFilteredMoves = (query: string) => {
+    let availableMoves = movesData;
+    
+    // 相手側の技の絞り込み（そのポケモンが覚える技だけ）
+    const myLearnset = learnsets[pokemon.base.name];
+    if (myLearnset && myLearnset.length > 0) {
+      availableMoves = movesData.filter(m => myLearnset.includes(m.name));
+    }
+
+    // 未実装技の除外処理
+    if (!showUnimplemented) {
+      availableMoves = availableMoves.filter(m => !unimplementedMoves.includes(m.name));
+    }
+
     if (!query) return [];
+    
     const normalizedQuery = hiraToKata(query);
-    return movesData
+    return availableMoves
       .filter(m => hiraToKata(m.name).startsWith(normalizedQuery))
       .slice(0, 30);
   };
@@ -149,7 +169,19 @@ export const PokemonDetailModal: React.FC<Props> = ({ pokemon, onSave, onClose }
           
           {/* 技選択 */}
           <div>
-            <label className="block text-xs font-bold text-slate-500 mb-2">技 (最大4つ)</label>
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-xs font-bold text-slate-500">技 (最大4つ)</label>
+              <label className="flex items-center cursor-pointer">
+                <input 
+                  type="checkbox" 
+                  checked={showUnimplemented}
+                  onChange={e => setShowUnimplemented(e.target.checked)}
+                  className="sr-only peer"
+                />
+                <div className="relative w-7 h-4 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-indigo-500"></div>
+                <span className="ml-2 text-[10px] font-bold text-slate-500">未実装技も表示</span>
+              </label>
+            </div>
             <div className="grid grid-cols-2 gap-2 relative">
               {[0, 1, 2, 3].map(index => {
                 const isActive = activeMoveIndex === index;
@@ -217,7 +249,12 @@ export const PokemonDetailModal: React.FC<Props> = ({ pokemon, onSave, onClose }
                               }}
                             >
                               <span className="font-bold text-slate-700">{m.name}</span>
-                              <TypeBadge type={m.type} />
+                              <div className="flex gap-1 items-center">
+                                {unimplementedMoves.includes(m.name) && (
+                                  <span className="text-[10px] font-bold text-slate-500 bg-slate-200 px-1.5 py-0.5 rounded mr-1">未実装</span>
+                                )}
+                                <TypeBadge type={m.type} />
+                              </div>
                             </button>
                           ))
                         ) : (
