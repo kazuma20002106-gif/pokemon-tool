@@ -81,38 +81,10 @@ export const NATURES = [
   "てれや (補正なし)", "がんばりや (補正なし)", "すなお (補正なし)", "きまぐれ (補正なし)", "まじめ (補正なし)"
 ];
 
-export const ITEMS = [
-  "なし",
-  "こだわりハチマキ",
-  "こだわりメガネ",
-  "こだわりスカーフ",
-  "いのちのたま",
-  "たつじんのおび",
-  "とつげきチョッキ",
-  "きあいのタスキ",
-  "パンチグローブ",
-  "ちからのハチマキ",
-  "ものしりメガネ",
-  "しんぴのしずく",
-  "もくたん",
-  "じしゃく",
-  "きせきのタネ",
-  "シルクのスカーフ",
-  "くろいメガネ",
-  "メタルコート",
-  "のろいのおふだ",
-  "するどいくちばし",
-  "りゅうのキバ",
-  "どくバリ",
-  "やわらかいすな",
-  "かたいいし",
-  "とけないこおり",
-  "まがったスプーン",
-  "ぎんのこな",
-  "くろおび",
-  "ようせいのはね",
-  "ノーマルジュエル",
-];
+import itemsData from '../data/items.json';
+
+const itemsDict = itemsData as Record<string, string>;
+export const ITEMS = ["なし", ...Object.keys(itemsDict)];
 
 const statLabels = [
   { key: 'hp', label: 'HP', icon: <Heart className="w-4 h-4 text-green-500" /> },
@@ -233,6 +205,11 @@ export const PokemonDetailModal: React.FC<Props> = ({ pokemon, onSave, onClose }
               >
                 {ITEMS.map(i => <option key={i} value={i}>{i}</option>)}
               </select>
+              {item !== "なし" && itemsDict[item] && (
+                <div className="mt-1 text-[10px] text-slate-500 line-clamp-2">
+                  {itemsDict[item]}
+                </div>
+              )}
             </div>
           </div>
 

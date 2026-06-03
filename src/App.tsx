@@ -7,8 +7,11 @@ import { getWeaknesses } from './utils/typeChart';
 import { applyStatRank } from './utils/statsCalc';
 import { DamageCalculator } from './components/DamageCalculator';
 import abilitiesData from './data/abilities.json';
+import itemsData from './data/items.json';
 
 const abilitiesDict = abilitiesData as Record<string, string>;
+const itemsDict = itemsData as Record<string, string>;
+const ITEMS = ["なし", ...Object.keys(itemsDict)];
 
 export type BattleStatRanks = { attack: number, defense: number, spAttack: number, spDefense: number, speed: number };
 
@@ -491,22 +494,19 @@ const App: React.FC = () => {
 
                   {/* 相手の道具 */}
                   <div className="mb-4">
-                    <div className="text-[10px] font-bold text-slate-500 mb-2">想定もちもの (タップで変更)</div>
-                    <div className="flex flex-wrap gap-2">
-                      {["なし", "こだわりスカーフ", "とつげきチョッキ", "きあいのタスキ", "いのちのたま", "オボンのみ"].map(item => (
-                        <button
-                          key={item}
-                          onClick={() => setOppActiveItem(item)}
-                          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
-                            oppActiveItem === item 
-                              ? 'bg-amber-600 text-white shadow-md border border-amber-700' 
-                              : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
-                          }`}
-                        >
-                          {item}
-                        </button>
-                      ))}
-                    </div>
+                    <label className="block text-[10px] font-bold text-slate-500 mb-2">想定もちもの</label>
+                    <select 
+                      value={oppActiveItem} 
+                      onChange={e => setOppActiveItem(e.target.value)}
+                      className="w-full p-2 text-sm bg-white border border-slate-200 rounded-lg outline-none focus:border-amber-400 font-bold text-slate-700 shadow-sm"
+                    >
+                      {ITEMS.map(i => <option key={i} value={i}>{i}</option>)}
+                    </select>
+                    {oppActiveItem !== "なし" && itemsDict[oppActiveItem] && (
+                      <div className="mt-2 text-xs text-slate-600 bg-amber-50 p-2 rounded-lg border border-amber-100 shadow-sm">
+                        <span className="font-bold text-amber-700">効果:</span> {itemsDict[oppActiveItem]}
+                      </div>
+                    )}
                   </div>
                   
                   <div className="grid grid-cols-2 gap-x-4 gap-y-1 mb-4">
