@@ -19,7 +19,15 @@ export const TYPE_CHART: Record<string, Record<string, number>> = {
   "フェアリー": { "どく": 2, "はがね": 2, "かくとう": 0.5, "むし": 0.5, "あく": 0.5, "ドラゴン": 0 }
 };
 
-export const getWeaknesses = (types: string[]): { weak: string[], resist: string[], immune: string[] } => {
+export interface TypeMatchups {
+  quadWeak: string[];
+  weak: string[];
+  resist: string[];
+  quadResist: string[];
+  immune: string[];
+}
+
+export const getWeaknesses = (types: string[]): TypeMatchups => {
   const multipliers: Record<string, number> = {};
   
   // Initialize all types with 1.0 multiplier
@@ -37,15 +45,19 @@ export const getWeaknesses = (types: string[]): { weak: string[], resist: string
     }
   });
 
+  const quadWeak: string[] = [];
   const weak: string[] = [];
   const resist: string[] = [];
+  const quadResist: string[] = [];
   const immune: string[] = [];
 
   Object.keys(multipliers).forEach(type => {
-    if (multipliers[type] > 1) weak.push(type);
-    if (multipliers[type] > 0 && multipliers[type] < 1) resist.push(type);
-    if (multipliers[type] === 0) immune.push(type);
+    if (multipliers[type] === 4) quadWeak.push(type);
+    else if (multipliers[type] === 2) weak.push(type);
+    else if (multipliers[type] === 0.5) resist.push(type);
+    else if (multipliers[type] === 0.25) quadResist.push(type);
+    else if (multipliers[type] === 0) immune.push(type);
   });
 
-  return { weak, resist, immune };
+  return { quadWeak, weak, resist, quadResist, immune };
 };

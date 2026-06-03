@@ -129,7 +129,19 @@ const App: React.FC = () => {
     return stat;
   };
 
-  const opponentWeaknesses = opponent ? getWeaknesses(opponent.types) : { weak: [], resist: [], immune: [] };
+  const opponentWeaknesses = opponent ? getWeaknesses(opponent.types) : { quadWeak: [], weak: [], resist: [], quadResist: [], immune: [] };
+
+  const renderMatchupRow = (label: string, types: string[], bgColorClass: string, labelColorClass: string) => {
+    if (types.length === 0) return null;
+    return (
+      <div className={`flex items-center gap-2 p-1.5 rounded-lg ${bgColorClass}`}>
+        <span className={`text-[10px] font-bold w-12 flex-shrink-0 text-center ${labelColorClass}`}>{label}</span>
+        <div className="flex flex-wrap gap-1">
+          {types.map(t => <TypeBadge key={t} type={t} />)}
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="min-h-screen bg-slate-50 pb-28 font-sans text-slate-800">
@@ -282,15 +294,14 @@ const App: React.FC = () => {
                     <StatBar label="素早" value={opponent.stats.speed} />
                   </div>
 
-                  {/* 弱点表示 */}
-                  <div className="border-t border-slate-200 pt-3">
-                    <div className="text-[10px] font-bold text-slate-500 mb-1">弱点 (ダメージ2倍以上)</div>
-                    <div className="flex flex-wrap gap-1">
-                      {opponentWeaknesses.weak.length > 0 
-                        ? opponentWeaknesses.weak.map(t => <TypeBadge key={t} type={t} />)
-                        : <span className="text-xs text-slate-400">なし</span>
-                      }
-                    </div>
+                  {/* 相性表示 (詳細) */}
+                  <div className="border-t border-slate-200 pt-3 space-y-1.5">
+                    <div className="text-[10px] font-bold text-slate-500 mb-2">タイプ相性</div>
+                    {renderMatchupRow("4倍", opponentWeaknesses.quadWeak, "bg-red-50", "text-red-600")}
+                    {renderMatchupRow("2倍", opponentWeaknesses.weak, "bg-orange-50", "text-orange-600")}
+                    {renderMatchupRow("0.5倍", opponentWeaknesses.resist, "bg-blue-50", "text-blue-600")}
+                    {renderMatchupRow("0.25倍", opponentWeaknesses.quadResist, "bg-indigo-50", "text-indigo-600")}
+                    {renderMatchupRow("無効", opponentWeaknesses.immune, "bg-slate-100", "text-slate-500")}
                   </div>
                 </div>
                 
