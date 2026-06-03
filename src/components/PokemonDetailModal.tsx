@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { X, Shield, Zap, Target, Activity, Heart, Swords } from 'lucide-react';
 
 export interface Stats { hp: number; attack: number; defense: number; spAttack: number; spDefense: number; speed: number; }
