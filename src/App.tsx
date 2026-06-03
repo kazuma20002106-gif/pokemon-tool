@@ -1,13 +1,35 @@
 import React, { useState, useEffect } from 'react';
 import svData from './data/sv.json';
 import championsData from './data/champions.json';
-import { Search, ChevronUp, ChevronDown, Minus, User, Swords, Trash2, Plus, Gamepad2, Settings2, Sun, CloudRain, Wind, Snowflake } from 'lucide-react';
+import { Search, ChevronUp, ChevronDown, Minus, User, Swords, Trash2, Plus, Gamepad2, Settings2, Sun, CloudRain, Wind, Snowflake, Info } from 'lucide-react';
 import { PokemonDetailModal, Pokemon, MyPokemon, NATURES } from './components/PokemonDetailModal';
 import { getWeaknesses } from './utils/typeChart';
 import { applyStatRank } from './utils/statsCalc';
 import { DamageCalculator } from './components/DamageCalculator';
 
 type GameVersion = 'champions' | 'sv';
+
+const ClickTooltip = ({ text, className = "w-48" }: { text: React.ReactNode, className?: string }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  return (
+    <div className="relative inline-flex items-center ml-1 align-middle">
+      <button 
+        type="button"
+        onClick={(e) => { e.preventDefault(); setIsOpen(!isOpen); }}
+        onBlur={() => setTimeout(() => setIsOpen(false), 200)}
+        className="text-slate-400 hover:text-slate-600 transition-colors p-1 -m-1"
+      >
+        <Info className="w-3.5 h-3.5" />
+      </button>
+      {isOpen && (
+        <div className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-2 ${className} p-3 bg-slate-800 text-white text-[11px] rounded shadow-xl z-[60] text-left font-normal leading-relaxed pointer-events-none`}>
+          {text}
+          <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-800"></div>
+        </div>
+      )}
+    </div>
+  );
+};
 
 const TypeBadge = ({ type }: { type: string }) => {
   const colors: Record<string, string> = {
@@ -245,27 +267,45 @@ const App: React.FC = () => {
           </div>
           
           {/* 天候トグル */}
-          <div className="p-3 bg-white border-b border-slate-200 flex overflow-x-auto gap-2 scrollbar-hide">
-            {[
-              { id: 'none', label: '天候なし', icon: <Minus className="w-3.5 h-3.5" /> },
-              { id: 'sun', label: '晴れ', icon: <Sun className="w-3.5 h-3.5" /> },
-              { id: 'rain', label: '雨', icon: <CloudRain className="w-3.5 h-3.5" /> },
-              { id: 'sandstorm', label: '砂嵐', icon: <Wind className="w-3.5 h-3.5" /> },
-              { id: 'snow', label: '雪', icon: <Snowflake className="w-3.5 h-3.5" /> },
-            ].map(w => (
-              <button
-                key={w.id}
-                onClick={() => setWeather(w.id)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-colors ${
-                  weather === w.id
-                    ? 'bg-amber-500 text-white shadow-md border border-amber-600'
-                    : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
-                }`}
-              >
-                {w.icon}
-                {w.label}
-              </button>
-            ))}
+          <div className="bg-white border-b border-slate-200">
+            <div className="px-3 pt-2 pb-1 flex items-center">
+              <span className="text-[10px] font-bold text-slate-500">フィールドの天候</span>
+              <ClickTooltip 
+                className="w-64"
+                text={
+                  <div className="space-y-1">
+                    <p className="font-bold border-b border-slate-600 pb-1 mb-1">天候の効果</p>
+                    <p>【晴れ】炎技1.5倍、水技0.5倍</p>
+                    <p>【雨】水技1.5倍、炎技0.5倍</p>
+                    <p>【砂嵐】岩タイプの特防1.5倍</p>
+                    <p>【雪】氷タイプの防御1.5倍</p>
+                    <p className="text-yellow-300 mt-1">※すいすい・サンパワーなどの特性も自動反映されます</p>
+                  </div>
+                } 
+              />
+            </div>
+            <div className="px-3 pb-3 flex overflow-x-auto gap-2 scrollbar-hide">
+              {[
+                { id: 'none', label: '天候なし', icon: <Minus className="w-3.5 h-3.5" /> },
+                { id: 'sun', label: '晴れ', icon: <Sun className="w-3.5 h-3.5" /> },
+                { id: 'rain', label: '雨', icon: <CloudRain className="w-3.5 h-3.5" /> },
+                { id: 'sandstorm', label: '砂嵐', icon: <Wind className="w-3.5 h-3.5" /> },
+                { id: 'snow', label: '雪', icon: <Snowflake className="w-3.5 h-3.5" /> },
+              ].map(w => (
+                <button
+                  key={w.id}
+                  onClick={() => setWeather(w.id)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-colors ${
+                    weather === w.id
+                      ? 'bg-amber-500 text-white shadow-md border border-amber-600'
+                      : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+                  }`}
+                >
+                  {w.icon}
+                  {w.label}
+                </button>
+              ))}
+            </div>
           </div>
 
           <div className="p-4">
