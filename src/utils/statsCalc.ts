@@ -1,4 +1,4 @@
-﻿export const calculateStat = (
+export const calculateStat = (
   base: number,
   iv: number,
   ev: number,
@@ -11,6 +11,14 @@
   }
   const stat = Math.floor(((base * 2 + iv + Math.floor(ev / 4)) * level) / 100) + 5;
   return Math.floor(stat * natureMultiplier);
+};
+
+export const applyStatRank = (stat: number, rank: number): number => {
+  if (rank === 0) return stat;
+  const clampedRank = Math.max(-6, Math.min(6, rank));
+  const num = Math.max(2, 2 + clampedRank);
+  const den = Math.max(2, 2 - clampedRank);
+  return Math.floor(stat * num / den);
 };
 
 export const NATURE_MULTIPLIERS: Record<string, { [key: string]: number }> = {

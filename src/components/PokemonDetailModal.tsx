@@ -39,12 +39,21 @@ export interface Pokemon {
   availableIn?: string[];
 }
 
+export interface StatRanks {
+  attack: number;
+  defense: number;
+  spAttack: number;
+  spDefense: number;
+  speed: number;
+}
+
 export interface MyPokemon {
   base: Pokemon;
   evs: Stats;
   nature: string;
   ability: string;
   moves: (string | null)[];
+  statRanks?: StatRanks;
 }
 
 interface Props {
@@ -73,6 +82,7 @@ const statLabels = [
 
 export const PokemonDetailModal: React.FC<Props> = ({ pokemon, onSave, onClose }) => {
   const [evs, setEvs] = useState<Stats>({ ...pokemon.evs });
+  const [statRanks, setStatRanks] = useState<StatRanks>(pokemon.statRanks || { attack: 0, defense: 0, spAttack: 0, spDefense: 0, speed: 0 });
   const [nature, setNature] = useState(pokemon.nature || NATURES[0]);
   const [ability, setAbility] = useState(pokemon.ability || pokemon.base.abilities[0]);
   const [moves, setMoves] = useState<(string | null)[]>(pokemon.moves || [null, null, null, null]);
@@ -276,41 +286,59 @@ export const PokemonDetailModal: React.FC<Props> = ({ pokemon, onSave, onClose }
                 残り: {remainingEVs}
               </span>
             </div>
-            <p className="text-[10px] text-slate-400 mb-3">ボタンをタップで限界まで振れます。もう一度タップで0に戻ります。</p>
             
             <div className="space-y-3">
               {statLabels.map(({ key, label, icon }) => (
-                <div key={key} className="flex items-center gap-3">
+                <div key={key} className="flex items-center gap-2">
                   <button 
-                    onClick={() => handleSmartEvClick(key)}
+                    onClick={() => handleSmartEvClick(key as keyof Stats)}
                     className={`flex-shrink-0 w-16 py-1.5 rounded-lg border-2 text-xs font-bold transition-all flex items-center justify-center gap-1 ${
-                      evs[key] > 0 
-                        ? evs[key] >= 252 ? 'bg-indigo-500 border-indigo-500 text-white shadow-md' : 'bg-indigo-100 border-indigo-200 text-indigo-700'
+                      evs[key as keyof Stats] > 0 
+                        ? evs[key as keyof Stats] >= 252 ? 'bg-indigo-500 border-indigo-500 text-white shadow-md' : 'bg-indigo-100 border-indigo-200 text-indigo-700'
                         : 'bg-white border-slate-200 text-slate-500 hover:border-indigo-300'
                     }`}
                   >
                     {icon} {label}
                   </button>
-                  <input 
-                    type="range" 
-                    min="0" max="252" step="4"
-                    value={evs[key]} 
-                    onChange={e => handleEvChange(key, parseInt(e.target.value))}
-                    className="flex-grow h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-500"
-                  />
-                  <input 
-                    type="number" 
-                    value={evs[key]} 
-                    onChange={e => handleEvChange(key, parseInt(e.target.value))}
-                    className="w-14 p-1 text-center text-sm font-bold bg-slate-50 border border-slate-200 rounded focus:border-indigo-400 outline-none"
-                  />
+                  <div className="flex-1 px-4">
+                    <input
+                      type="range"
+                      min="0"
+                      max="252"
+                      step="4"
+                      value={evs[key as keyof Stats]}
+                      onChange={(e) => handleEvChange(key as keyof Stats, Number(e.target.value))}
+                      className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <input
+                      type="number"
+                      min="0"
+                      max="252"
+                      step="4"
+                      value={evs[key as keyof Stats]}
+                      onChange={(e) => handleEvChange(key as keyof Stats, Number(e.target.value))}
+                      className="w-16 p-1.5 text-center text-sm border border-slate-200 rounded-lg outline-none focus:border-indigo-400 bg-slate-50 font-mono"
+                    />
+                    {key !== 'hp' && (
+                      <select
+                        value={statRanks[key as keyof StatRanks]}
+                        onChange={(e) => setStatRanks({ ...statRanks, [key]: Number(e.target.value) })}
+                        className="w-16 p-1 text-center text-xs font-bold border border-slate-200 rounded-lg outline-none bg-slate-100 text-slate-600"
+                        title="ランク補正 (-6 ~ +6)"
+                      >
+                        {[-6,-5,-4,-3,-2,-1,0,1,2,3,4,5,6].map(r => (
+                          <option key={r} value={r}>{r > 0 ? `+${r}` : r}</option>
+                        ))}
+                      </select>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
           </div>
         </div>
-
-
 
         <div className="p-4 bg-slate-50 border-t">
           <button 

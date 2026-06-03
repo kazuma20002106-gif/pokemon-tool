@@ -2,7 +2,7 @@ import React from 'react';
 import { Info } from 'lucide-react';
 import { Pokemon, MyPokemon } from './PokemonDetailModal';
 import { calculateDamage } from '../utils/damageCalc';
-import { calculateStat, getNatureMultiplier } from '../utils/statsCalc';
+import { calculateStat, getNatureMultiplier, applyStatRank } from '../utils/statsCalc';
 import movesData from '../data/moves.json';
 
 interface Props {
@@ -38,6 +38,10 @@ export const DamageCalculator: React.FC<Props> = ({ myTeam, opponent }) => {
     );
   }
 
+  const hasIntimidate = opponent.abilities.includes("いかく");
+  const specialAbilities = ["ばけのかわ", "マルチスケイル", "ファントムガード", "アイスフェイス"];
+  const oppSpecialAbility = opponent.abilities.find(a => specialAbilities.includes(a));
+
   return (
     <div className="mt-4 p-4 border border-slate-200 bg-slate-50 rounded-xl">
       <div className="flex justify-between items-end mb-3">
@@ -47,6 +51,12 @@ export const DamageCalculator: React.FC<Props> = ({ myTeam, opponent }) => {
         </span>
       </div>
       
+      {oppSpecialAbility && (
+        <div className="mb-3 px-3 py-2 bg-yellow-50 border border-yellow-200 text-yellow-800 text-xs rounded-lg">
+          ※ 相手の特性『{oppSpecialAbility}』によるダメージ軽減・無効化は考慮していません。
+        </div>
+      )}
+      
       <div className="space-y-3">
         {teamWithMoves.map((myPoke, i) => {
           const validMoves = myPoke.moves.filter(m => m !== null) as string[];
@@ -54,9 +64,16 @@ export const DamageCalculator: React.FC<Props> = ({ myTeam, opponent }) => {
 
           return (
             <div key={i} className="bg-white p-3 rounded-lg border border-slate-200 shadow-sm">
-              <div className="text-xs font-bold text-slate-800 mb-2 flex items-center border-b border-slate-100 pb-2">
-                <span className="truncate">{myPoke.base.name}</span>
-                <span className="text-[10px] ml-2 font-normal text-slate-400 border border-slate-200 px-1 rounded">からの攻撃</span>
+              <div className="text-xs font-bold text-slate-800 mb-2 flex flex-col sm:flex-row sm:items-center border-b border-slate-100 pb-2">
+                <div className="flex items-center">
+                  <span className="truncate">{myPoke.base.name}</span>
+                  <span className="text-[10px] ml-2 font-normal text-slate-400 border border-slate-200 px-1 rounded">からの攻撃</span>
+                </div>
+                {hasIntimidate && (
+                  <span className="text-[10px] text-red-500 ml-0 sm:ml-2 mt-1 sm:mt-0 bg-red-50 px-1.5 py-0.5 rounded border border-red-100">
+                    ※ 相手の「いかく」で攻撃1段階ダウン
+                  </span>
+                )}
               </div>
               
               <div className="space-y-2">
@@ -76,7 +93,24 @@ export const DamageCalculator: React.FC<Props> = ({ myTeam, opponent }) => {
                   const attackEv = isPhysical ? myPoke.evs.attack : myPoke.evs.spAttack;
                   const attackMult = getNatureMultiplier(myPoke.nature, isPhysical ? 'attack' : 'spAttack');
                   
-                  const actualAttack = calculateStat(attackBase, 31, attackEv, 50, attackMult, false);
+                  let actualAttack = calculateStat(attackBase, 31, attackEv, 50, attackMult, false);
+                  
+                  // ランク補正の適用
+                  let atkRank = myPoke.statRanks ? (isPhysical ? myPoke.statRanks.attack : myPoke.statRanks.spAttack) : 0;
+                  if (isPhysical && hasIntimidate) {
+                    atkRank -= 1; // いかく
+                  }
+                  actualAttack = applyStatRank(actualAttack, atkRank);
+
+                  // 特性によるステータス補正
+                  if (isPhysical) {
+                    if (myPoke.ability === "ちからもち" || myPoke.ability === "ヨガパワー") {
+                      actualAttack = Math.floor(actualAttack * 2);
+                    } else if (myPoke.ability === "はりきり") {
+                      actualAttack = Math.floor(actualAttack * 1.5);
+                    }
+                  }
+
                   const targetDef = isPhysical ? oppDef : oppSpDef;
 
                   const damage = calculateDamage(
@@ -87,7 +121,9 @@ export const DamageCalculator: React.FC<Props> = ({ myTeam, opponent }) => {
                     moveData.type,
                     myPoke.base.types,
                     opponent.types,
-                    oppMaxHp
+                    oppMaxHp,
+                    myPoke.ability,
+                    opponent.abilities
                   );
 
                   let resultColor = "text-slate-600";
@@ -97,10 +133,34 @@ export const DamageCalculator: React.FC<Props> = ({ myTeam, opponent }) => {
 
                   return (
                     <div key={j} className="flex flex-col gap-1.5 mt-2 first:mt-0">
-                      <div className="flex justify-between items-center text-xs">
-                        <div className="font-bold text-slate-700 flex items-center">
-                          {moveName} 
-                          <span className="text-[10px] text-slate-400 ml-1 font-normal">({moveData.type} / 威力{moveData.power})</span>
+                      <div className="flex justify-between items-start text-xs">
+                        <div className="font-bold text-slate-700 flex flex-col">
+                          <div className="flex items-center">
+                            {moveName} 
+                            <span className="text-[10px] text-slate-400 ml-1 font-normal">({moveData.type} / 威力{moveData.power})</span>
+                          </div>
+                          <div className="flex items-center gap-1 mt-1 flex-wrap">
+                            {damage.stabBonus > 1 && (
+                              <span className="text-[9px] bg-indigo-50 text-indigo-600 px-1 rounded border border-indigo-100">
+                                {damage.stabBonus === 2.0 ? 'てきおうりょく (2.0倍)' : 'タイプ一致 (1.5倍)'}
+                              </span>
+                            )}
+                            {damage.effectiveness > 1 && (
+                              <span className="text-[9px] bg-red-50 text-red-600 px-1 rounded border border-red-100">
+                                ばつぐん ({damage.effectiveness}倍)
+                              </span>
+                            )}
+                            {damage.effectiveness < 1 && damage.effectiveness > 0 && (
+                              <span className="text-[9px] bg-blue-50 text-blue-600 px-1 rounded border border-blue-100">
+                                いまひとつ ({damage.effectiveness}倍)
+                              </span>
+                            )}
+                            {damage.immunityReason && (
+                              <span className="text-[9px] bg-slate-100 text-slate-600 px-1 rounded border border-slate-200">
+                                {damage.immunityReason === 'type' ? `${moveData.type}タイプのため無効` : `特性『${damage.immunityReason}』のため無効`}
+                              </span>
+                            )}
+                          </div>
                         </div>
                         <div className="flex items-center">
                           <span className={`font-black ${resultColor}`}>{damage.hitsToKO}</span>

@@ -6,6 +6,9 @@ export interface DamageResult {
   minPercent: number;
   maxPercent: number;
   hitsToKO: string;
+  stabBonus: number;
+  effectiveness: number;
+  immunityReason?: string;
 }
 
 export const getEffectiveness = (moveType: string, targetTypes: string[]): number => {
@@ -27,19 +30,48 @@ export const calculateDamage = (
   moveType: string,
   attackerTypes: string[],
   targetTypes: string[],
-  targetMaxHp: number
+  targetMaxHp: number,
+  attackerAbility: string = "",
+  defenderAbilities: string[] = []
 ): DamageResult => {
+  // 特性による威力補正
+  let finalPower = power;
+  if (attackerAbility === "テクニシャン" && power <= 60) {
+    finalPower = Math.floor(power * 1.5);
+  }
+
   // 基本ダメージ: ((2 * L / 5 + 2) * Power * A / D) / 50 + 2
-  const baseDamage = Math.floor(Math.floor(Math.floor((2 * level) / 5 + 2) * power * attackStat / defenseStat) / 50) + 2;
+  const baseDamage = Math.floor(Math.floor(Math.floor((2 * level) / 5 + 2) * finalPower * attackStat / defenseStat) / 50) + 2;
 
   // タイプ一致ボーナス (STAB)
-  const stab = attackerTypes.includes(moveType) ? 1.5 : 1.0;
+  let stab = attackerTypes.includes(moveType) ? 1.5 : 1.0;
+  if (attackerAbility === "てきおうりょく" && stab > 1.0) {
+    stab = 2.0;
+  }
   
   // タイプ相性
   const effectiveness = getEffectiveness(moveType, targetTypes);
 
+  // 特性による無効化判定
+  let immunityReason = undefined;
+  if (effectiveness === 0) {
+    immunityReason = 'type';
+  } else if (moveType === 'じめん' && defenderAbilities.includes('ふゆう')) {
+    immunityReason = 'ふゆう';
+  } else if (moveType === 'じめん' && defenderAbilities.includes('どしょく')) {
+    immunityReason = 'どしょく';
+  } else if (moveType === 'みず' && (defenderAbilities.includes('ちょすい') || defenderAbilities.includes('よびみず') || defenderAbilities.includes('かんそうはだ'))) {
+    immunityReason = defenderAbilities.find(a => ['ちょすい', 'よびみず', 'かんそうはだ'].includes(a));
+  } else if (moveType === 'ほのお' && defenderAbilities.includes('もらいび')) {
+    immunityReason = 'もらいび';
+  } else if (moveType === 'でんき' && (defenderAbilities.includes('ちくでん') || defenderAbilities.includes('ひらいしん') || defenderAbilities.includes('でんきエンジン'))) {
+    immunityReason = defenderAbilities.find(a => ['ちくでん', 'ひらいしん', 'でんきエンジン'].includes(a));
+  } else if (moveType === 'くさ' && defenderAbilities.includes('そうしょく')) {
+    immunityReason = 'そうしょく';
+  }
+
   // Modifier = STAB * Effectiveness
-  const modifier = stab * effectiveness;
+  const modifier = immunityReason ? 0 : (stab * effectiveness);
 
   // 乱数 (0.85 ~ 1.0)
   const minDamage = Math.floor(Math.floor(baseDamage * modifier) * 0.85);
@@ -74,6 +106,9 @@ export const calculateDamage = (
     maxDamage,
     minPercent: Number(minPercent.toFixed(1)),
     maxPercent: Number(maxPercent.toFixed(1)),
-    hitsToKO
+    hitsToKO,
+    stabBonus: stab,
+    effectiveness: immunityReason ? 0 : effectiveness,
+    immunityReason
   };
 };
