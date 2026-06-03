@@ -270,9 +270,9 @@ export const PokemonDetailModal: React.FC<Props> = ({ pokemon, onSave, onClose }
                     </div>
 
                     {isActive && moveSearchQuery && (
-                      <div className={`absolute z-50 w-[200%] sm:w-[150%] max-w-[280px] ${index % 2 === 1 ? 'right-0' : 'left-0'} bottom-full mb-1 bg-white border border-slate-200 rounded-xl shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.3)] max-h-48 overflow-y-auto flex flex-col-reverse`}>
+                      <div className={`absolute z-[100] w-[200%] sm:w-[150%] max-w-[280px] ${index % 2 === 1 ? 'right-0' : 'left-0'} ${index < 2 ? 'top-full mt-1 flex-col' : 'bottom-full mb-1 flex-col-reverse'} bg-white border border-slate-200 rounded-xl shadow-[0_10px_40px_-15px_rgba(0,0,0,0.3)] max-h-48 overflow-y-auto flex`}>
                         {getFilteredMoves(moveSearchQuery).length > 0 ? (
-                          [...getFilteredMoves(moveSearchQuery)].reverse().map(m => (
+                          (index < 2 ? getFilteredMoves(moveSearchQuery) : [...getFilteredMoves(moveSearchQuery)].reverse()).map(m => (
                             <button
                               key={m.name}
                               className="w-full text-left p-2.5 hover:bg-slate-50 border-b border-slate-50 last:border-0 flex justify-between items-center text-sm transition-colors"
@@ -354,11 +354,11 @@ export const PokemonDetailModal: React.FC<Props> = ({ pokemon, onSave, onClose }
                       <select
                         value={statRanks[key as keyof StatRanks]}
                         onChange={(e) => setStatRanks({ ...statRanks, [key]: Number(e.target.value) })}
-                        className="w-16 p-1 text-center text-xs font-bold border border-slate-200 rounded-lg outline-none bg-slate-100 text-slate-600"
+                        className="w-[72px] p-1 text-center text-[10px] font-bold border border-slate-200 rounded-lg outline-none bg-slate-100 text-slate-600"
                         title="ランク補正 (-6 ~ +6)"
                       >
                         {[-6,-5,-4,-3,-2,-1,0,1,2,3,4,5,6].map(r => (
-                          <option key={r} value={r}>{r > 0 ? `+${r}` : r}</option>
+                          <option key={r} value={r}>ランク {r > 0 ? `+${r}` : r === 0 ? '±0' : r}</option>
                         ))}
                       </select>
                     )}
