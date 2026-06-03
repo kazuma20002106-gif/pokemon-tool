@@ -12,9 +12,9 @@ export const getEffectiveness = (moveType: string, targetTypes: string[]): numbe
   if (!moveType || !TYPE_CHART[moveType]) return 1;
   let multiplier = 1;
   for (const tType of targetTypes) {
-    if (TYPE_CHART[moveType].weak.includes(tType)) multiplier *= 2;
-    if (TYPE_CHART[moveType].resist.includes(tType)) multiplier *= 0.5;
-    if (TYPE_CHART[moveType].immune.includes(tType)) multiplier *= 0;
+    if (TYPE_CHART[moveType] && TYPE_CHART[moveType][tType] !== undefined) {
+      multiplier *= TYPE_CHART[moveType][tType];
+    }
   }
   return multiplier;
 };

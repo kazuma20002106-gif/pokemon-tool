@@ -4,6 +4,7 @@ import championsData from './data/champions.json';
 import { Search, ChevronUp, ChevronDown, Minus, User, Swords, Trash2, Plus, Gamepad2, Settings2 } from 'lucide-react';
 import { PokemonDetailModal, Pokemon, MyPokemon, NATURES } from './components/PokemonDetailModal';
 import { getWeaknesses } from './utils/typeChart';
+import { DamageCalculator } from './components/DamageCalculator';
 
 type GameVersion = 'champions' | 'sv';
 
@@ -360,10 +361,9 @@ const App: React.FC = () => {
                     );
                   })}
                 </div>
-              </div>
-
                 {/* ダメージ計算エリア */}
                 <DamageCalculator myTeam={myTeam} opponent={opponent} />
+              </div>
             )}
           </div>
         </section>

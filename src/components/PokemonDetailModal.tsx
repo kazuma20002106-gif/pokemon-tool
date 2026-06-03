@@ -10,6 +10,7 @@ export interface Pokemon {
   abilities: string[]; 
   hiddenAbilities: string[]; 
   stats: Stats; 
+  availableIn?: string[];
 }
 
 export interface MyPokemon {

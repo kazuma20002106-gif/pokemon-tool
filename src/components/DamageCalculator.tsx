@@ -1,6 +1,6 @@
-﻿import React, { useMemo } from 'react';
+﻿import React from 'react';
 import { Pokemon, MyPokemon } from './PokemonDetailModal';
-import { calculateDamage, getEffectiveness } from '../utils/damageCalc';
+import { calculateDamage } from '../utils/damageCalc';
 import { calculateStat, getNatureMultiplier } from '../utils/statsCalc';
 import movesData from '../data/moves.json';
 
