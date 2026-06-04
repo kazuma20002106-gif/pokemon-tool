@@ -1,5 +1,6 @@
 import React from 'react';
-import { Settings2, Zap } from 'lucide-react';
+import { Zap } from 'lucide-react';
+import megaIds from '../data/megaIds.json';
 import { MyPokemon, Pokemon } from './PokemonDetailModal';
 import { BattleStatRanks } from '../App';
 
@@ -32,7 +33,7 @@ const StatBar = ({ label, value, max = 255 }: { label: string, value: number, ma
 const RankSelector = ({ label, value, onChange }: { label: string, value: number, onChange: (val: number) => void }) => {
   return (
     <div className="flex items-center justify-between bg-white rounded border border-slate-200 px-1 py-0.5">
-      <span className="text-[9px] font-bold text-slate-500 w-4">{label}</span>
+      <span className="text-[9px] font-bold text-slate-500 w-5">{label}</span>
       <div className="flex items-center gap-1">
         <button onClick={() => onChange(value - 1)} disabled={value <= -6} className="text-slate-400 hover:text-slate-700 disabled:opacity-30">-</button>
         <span className={`text-[10px] font-bold w-3 text-center ${value > 0 ? 'text-red-500' : value < 0 ? 'text-blue-500' : 'text-slate-700'}`}>
@@ -79,16 +80,16 @@ export const BattlePokemonCard: React.FC<BattlePokemonCardProps> = ({
         <div className="flex items-center gap-3">
           <div className="relative">
             <img 
-              src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${pokemon.base.id}.png`}
-              alt={pokemon.base.name}
+              src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${(megaIds as any)[basePokemonData.name] || basePokemonData.id}.png`}
+              alt={basePokemonData.name}
               className="w-14 h-14 drop-shadow-md bg-white rounded-full border border-slate-200"
             />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="font-black text-sm text-slate-800">{pokemon.base.name}</h3>
-              <button onClick={onEdit} className="text-slate-400 hover:text-slate-600 p-1">
-                <Settings2 className="w-4 h-4" />
+              <h3 className="font-black text-sm text-slate-800">{basePokemonData.name}</h3>
+              <button onClick={onEdit} className="text-[9px] font-bold bg-slate-100 hover:bg-slate-200 text-slate-600 px-2 py-1 rounded shadow-sm border border-slate-200">
+                ステータス・技を変更
               </button>
             </div>
             <div className="flex gap-1 mt-1">
@@ -117,11 +118,11 @@ export const BattlePokemonCard: React.FC<BattlePokemonCardProps> = ({
       </div>
 
       <div className="grid grid-cols-5 gap-1">
-        <RankSelector label="A" value={ranks.attack} onChange={(v) => onRankChange('attack', v)} />
-        <RankSelector label="B" value={ranks.defense} onChange={(v) => onRankChange('defense', v)} />
-        <RankSelector label="C" value={ranks.spAttack} onChange={(v) => onRankChange('spAttack', v)} />
-        <RankSelector label="D" value={ranks.spDefense} onChange={(v) => onRankChange('spDefense', v)} />
-        <RankSelector label="S" value={ranks.speed} onChange={(v) => onRankChange('speed', v)} />
+        <RankSelector label="攻撃" value={ranks.attack} onChange={(v) => onRankChange('attack', v)} />
+        <RankSelector label="防御" value={ranks.defense} onChange={(v) => onRankChange('defense', v)} />
+        <RankSelector label="特攻" value={ranks.spAttack} onChange={(v) => onRankChange('spAttack', v)} />
+        <RankSelector label="特防" value={ranks.spDefense} onChange={(v) => onRankChange('spDefense', v)} />
+        <RankSelector label="素早" value={ranks.speed} onChange={(v) => onRankChange('speed', v)} />
       </div>
 
       {megaEvolutions.length > 0 && onMegaEvolution && (

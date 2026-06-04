@@ -1,6 +1,7 @@
 import React from 'react';
 import { Plus, X, Search } from 'lucide-react';
 import { MyPokemon, Pokemon } from './PokemonDetailModal';
+import megaIds from '../data/megaIds.json';
 
 interface TeamSelectorProps {
   team: (MyPokemon | null)[];
@@ -39,7 +40,7 @@ export const TeamSelector: React.FC<TeamSelectorProps> = ({
 
   return (
     <div className={`p-3 rounded-xl shadow-sm border ${isOpponent ? 'bg-rose-50/50 border-rose-200' : 'bg-indigo-50/50 border-indigo-200'}`}>
-      <div className="flex gap-2 overflow-x-auto pb-2 snap-x">
+      <div className="flex gap-2 overflow-x-auto py-2 px-2 snap-x">
         {team.map((poke, i) => (
           <div key={i} className="flex-shrink-0 snap-start relative">
             {poke ? (
@@ -51,7 +52,7 @@ export const TeamSelector: React.FC<TeamSelectorProps> = ({
                     : 'border-slate-200 hover:border-slate-400 opacity-70 hover:opacity-100'}`}
               >
                 <img 
-                  src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${poke.base.id}.png`}
+                  src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${(megaIds as any)[poke.base.name] || poke.base.id}.png`}
                   alt={poke.base.name}
                   className="w-10 h-10 object-contain"
                 />
