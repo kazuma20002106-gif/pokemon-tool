@@ -178,7 +178,7 @@ export const PokemonDetailModal: React.FC<Props> = ({ pokemon, onSave, onClose }
         </div>
 
         <div className="p-4 space-y-6 pb-12">
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="flex items-center text-xs font-bold text-slate-500 mb-1">
                 特性
@@ -202,7 +202,7 @@ export const PokemonDetailModal: React.FC<Props> = ({ pokemon, onSave, onClose }
                   onClick={() => setActiveNatureSelect(!activeNatureSelect)}
                   className="w-full p-1.5 px-2.5 text-xs bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-indigo-400 text-left flex justify-between items-center"
                 >
-                  <div className="flex items-center gap-2 whitespace-nowrap overflow-hidden">
+                  <div className="flex items-center gap-2 whitespace-nowrap">
                     <span className="font-bold text-slate-700">{nature.split(' ')[0]}</span>
                     {nature.includes('↑') ? (
                       <div className="flex gap-1.5">
@@ -244,7 +244,7 @@ export const PokemonDetailModal: React.FC<Props> = ({ pokemon, onSave, onClose }
                 )}
               </div>
             </div>
-            <div className="relative">
+            <div className="relative col-span-2">
               <label className="block text-xs font-bold text-slate-500 mb-1">もちもの</label>
               <div className="relative">
                 <input
