@@ -29,13 +29,13 @@ const InfoTooltip = ({ text, className = "w-48", align = 'center' }: { text: str
         <Info className="w-3.5 h-3.5" />
       </button>
       {isOpen && (
-        <div className={`absolute bottom-full mb-2 ${className} p-2 bg-slate-800 text-white text-[10px] rounded shadow-xl z-50 text-left font-normal leading-relaxed pointer-events-none ${
+        <div className={`absolute top-full mt-2 ${className} p-2 bg-slate-800 text-white text-[10px] rounded shadow-xl z-[70] text-left font-normal leading-relaxed pointer-events-none ${
           align === 'right' ? 'right-0' : 'left-1/2 -translate-x-1/2'
         }`}>
-          {text}
-          <div className={`absolute top-full border-4 border-transparent border-t-slate-800 ${
+          <div className={`absolute bottom-full border-4 border-transparent border-b-slate-800 ${
             align === 'right' ? 'right-2' : 'left-1/2 -translate-x-1/2'
           }`}></div>
+          {text}
         </div>
       )}
     </div>
@@ -121,8 +121,8 @@ export const DamageCalculator: React.FC<Props> = ({ myTeam, activePokemonIndices
   const oppSpecialAbility = specialAbilities.includes(oppActiveAbility) ? oppActiveAbility : null;
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mt-4">
-      <div className="bg-slate-100 p-3 border-b border-slate-200 flex flex-col gap-2">
+    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 mt-4">
+      <div className="bg-slate-100 p-3 border-b border-slate-200 flex flex-col gap-2 rounded-t-2xl">
         <div className="flex items-center justify-between">
           <div className="flex items-center text-slate-700">
             <Swords className="w-5 h-5 mr-2" />
@@ -189,7 +189,7 @@ export const DamageCalculator: React.FC<Props> = ({ myTeam, activePokemonIndices
         </div>
       )}
       
-      <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:bg-slate-300 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-track]:bg-slate-100">
+      <div className="space-y-3 max-h-[600px] overflow-y-auto pb-32 pr-2 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:bg-slate-300 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-track]:bg-slate-100">
         {teamWithMoves.map((myPoke, i) => {
           const validMoves = myPoke.moves.filter(m => m !== null) as string[];
           if (validMoves.length === 0) {
