@@ -195,24 +195,26 @@ export const PokemonDetailModal: React.FC<Props> = ({ pokemon, onSave, onClose }
               </select>
             </div>
             <div>
-              <label className="flex items-center justify-between text-xs font-bold text-slate-500 mb-1">
-                <span>性格</span>
+              <label className="block text-xs font-bold text-slate-500 mb-1">性格</label>
+              <div className="flex items-center gap-1.5">
+                <select 
+                  value={nature} 
+                  onChange={e => setNature(e.target.value)}
+                  className="flex-1 w-full p-2 text-xs bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-indigo-400"
+                >
+                  {NATURES.map(n => <option key={n} value={n}>{n.split(' ')[0]}</option>)}
+                </select>
                 {nature.includes('↑') ? (
-                  <span className="text-[10px] font-normal scale-90 origin-right whitespace-nowrap">
-                    <span className="text-red-500">{nature.match(/\((.+)↑/)?.[1]}↑</span>
-                    <span className="text-blue-500 ml-1">{nature.match(/ (.+)↓\)/)?.[1]}↓</span>
-                  </span>
+                  <div className="flex flex-col items-center justify-center bg-white border border-slate-200 rounded px-1.5 py-0.5 min-w-[36px]">
+                    <span className="text-[9px] font-bold text-red-500 leading-tight">{nature.match(/\(([^ ]+)↑/)?.[1]}↑</span>
+                    <span className="text-[9px] font-bold text-blue-500 leading-tight">{nature.match(/ ([^ ]+)↓\)/)?.[1]}↓</span>
+                  </div>
                 ) : (
-                  <span className="text-[10px] font-normal scale-90 origin-right text-slate-400">補正なし</span>
+                  <div className="flex items-center justify-center bg-slate-50 border border-slate-200 rounded px-1.5 py-1 min-w-[36px] h-[34px]">
+                    <span className="text-[9px] font-bold text-slate-400 whitespace-nowrap">なし</span>
+                  </div>
                 )}
-              </label>
-              <select 
-                value={nature} 
-                onChange={e => setNature(e.target.value)}
-                className="w-full p-2 text-xs bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-indigo-400"
-              >
-                {NATURES.map(n => <option key={n} value={n}>{n.split(' ')[0]}</option>)}
-              </select>
+              </div>
             </div>
             <div className="relative">
               <label className="block text-xs font-bold text-slate-500 mb-1">もちもの</label>

@@ -29,6 +29,10 @@ export const TeamSelector: React.FC<TeamSelectorProps> = ({
   gameVersion
 }) => {
   const [addingIndex, setAddingIndex] = React.useState<number | null>(null);
+  const inputRef = React.useRef<HTMLInputElement>(null);
+  React.useEffect(() => {
+    if (addingIndex !== null) inputRef.current?.focus();
+  }, [addingIndex]);
   
   const hiraToKata = (str: string) => {
     return str.replace(/[\u3041-\u3096]/g, match => String.fromCharCode(match.charCodeAt(0) + 0x60));
@@ -87,7 +91,7 @@ export const TeamSelector: React.FC<TeamSelectorProps> = ({
         <div className="mt-3 animate-[fadeIn_0.2s_ease-out]">
           <div className="relative">
             <input
-              autoFocus
+              ref={inputRef}
               type="text"
               className={`w-full p-2.5 pl-9 pr-12 border-2 rounded-xl text-sm font-medium outline-none transition-all
                 ${isOpponent 
