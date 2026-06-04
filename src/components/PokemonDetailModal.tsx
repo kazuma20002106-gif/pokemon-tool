@@ -209,7 +209,7 @@ export const PokemonDetailModal: React.FC<Props> = ({ pokemon, onSave, onClose }
                   {activeNatureSelect && (
                     <>
                       <div className="fixed inset-0 z-40" onClick={() => setActiveNatureSelect(false)} />
-                      <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-[0_10px_40px_-15px_rgba(0,0,0,0.3)] z-[100] max-h-48 overflow-y-auto">
+                      <div className="absolute top-full left-0 min-w-[140px] mt-1 bg-white border border-slate-200 rounded-xl shadow-[0_10px_40px_-15px_rgba(0,0,0,0.3)] z-[100] max-h-48 overflow-y-auto">
                         {NATURES.map(n => (
                           <div 
                             key={n}
@@ -217,9 +217,15 @@ export const PokemonDetailModal: React.FC<Props> = ({ pokemon, onSave, onClose }
                               setNature(n);
                               setActiveNatureSelect(false);
                             }}
-                            className={`p-2.5 text-xs border-b border-slate-50 cursor-pointer hover:bg-slate-50 ${nature === n ? 'bg-indigo-50 font-bold text-indigo-700' : 'text-slate-700'}`}
+                            className={`px-3 py-2 text-xs border-b border-slate-50 cursor-pointer hover:bg-slate-50 flex justify-between items-center gap-3 ${nature === n ? 'bg-indigo-50 font-bold text-indigo-700' : 'text-slate-700'}`}
                           >
-                            {n}
+                            <span>{n.split(' ')[0]}</span>
+                            {n.includes('↑') && (
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-[9px] font-bold text-red-500">{n.match(/\(([^ ]+)↑/)?.[1]}↑</span>
+                                <span className="text-[9px] font-bold text-blue-500">{n.match(/ ([^ ]+)↓\)/)?.[1]}↓</span>
+                              </div>
+                            )}
                           </div>
                         ))}
                       </div>
