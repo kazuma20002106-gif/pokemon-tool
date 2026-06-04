@@ -18,9 +18,26 @@ interface Props {
 
 const InfoTooltip = ({ text, className = "w-48", align = 'center' }: { text: string, className?: string, align?: 'center' | 'right' }) => {
   const [isOpen, setIsOpen] = React.useState(false);
+  const buttonRef = React.useRef<HTMLButtonElement>(null);
+  const [pos, setPos] = React.useState({ top: 0, left: 0 });
+
+  React.useEffect(() => {
+    if (isOpen && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      setPos({
+        top: rect.top,
+        left: align === 'right' ? rect.right : rect.left + rect.width / 2
+      });
+      const handleScroll = () => setIsOpen(false);
+      window.addEventListener('scroll', handleScroll, true);
+      return () => window.removeEventListener('scroll', handleScroll, true);
+    }
+  }, [isOpen, align]);
+
   return (
     <div className="relative inline-flex items-center ml-1 align-middle">
       <button 
+        ref={buttonRef}
         type="button"
         onClick={(e) => { e.preventDefault(); setIsOpen(!isOpen); }}
         onBlur={() => setTimeout(() => setIsOpen(false), 200)}
@@ -29,13 +46,20 @@ const InfoTooltip = ({ text, className = "w-48", align = 'center' }: { text: str
         <Info className="w-3.5 h-3.5" />
       </button>
       {isOpen && (
-        <div className={`absolute top-full mt-2 ${className} p-2 bg-slate-800 text-white text-[10px] rounded shadow-xl z-[70] text-left font-normal leading-relaxed pointer-events-none ${
-          align === 'right' ? 'right-0' : 'left-1/2 -translate-x-1/2'
-        }`}>
-          <div className={`absolute bottom-full border-4 border-transparent border-b-slate-800 ${
-            align === 'right' ? 'right-2' : 'left-1/2 -translate-x-1/2'
-          }`}></div>
+        <div 
+          className={`fixed z-[100] p-2 bg-slate-800 text-white text-[10px] rounded shadow-xl text-left font-normal leading-relaxed pointer-events-none ${className}`}
+          style={{ 
+            top: pos.top - 6,
+            left: pos.left,
+            transform: align === 'right' ? 'translate(-100%, -100%)' : 'translate(-50%, -100%)'
+          }}
+        >
           {text}
+          <div 
+            className={`absolute top-full border-4 border-transparent border-t-slate-800 ${
+              align === 'right' ? 'right-2' : 'left-1/2 -translate-x-1/2'
+            }`}
+          ></div>
         </div>
       )}
     </div>

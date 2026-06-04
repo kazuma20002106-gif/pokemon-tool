@@ -10,11 +10,28 @@ import { TeamSelector } from './components/TeamSelector';
 export type BattleStatRanks = { attack: number, defense: number, spAttack: number, spDefense: number, speed: number };
 type GameVersion = 'champions' | 'sv';
 
-const ClickTooltip = ({ text, className = "w-48" }: { text: React.ReactNode, className?: string }) => {
+const ClickTooltip = ({ text, className = "w-48", align = 'center' }: { text: React.ReactNode, className?: string, align?: 'center' | 'right' }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const buttonRef = React.useRef<HTMLButtonElement>(null);
+  const [pos, setPos] = React.useState({ top: 0, left: 0 });
+
+  useEffect(() => {
+    if (isOpen && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      setPos({
+        top: rect.top,
+        left: align === 'right' ? rect.right : rect.left + rect.width / 2
+      });
+      const handleScroll = () => setIsOpen(false);
+      window.addEventListener('scroll', handleScroll, true);
+      return () => window.removeEventListener('scroll', handleScroll, true);
+    }
+  }, [isOpen, align]);
+
   return (
     <div className="relative inline-flex items-center ml-1 align-middle">
       <button 
+        ref={buttonRef}
         type="button"
         onClick={(e) => { e.preventDefault(); setIsOpen(!isOpen); }}
         onBlur={() => setTimeout(() => setIsOpen(false), 200)}
@@ -23,9 +40,20 @@ const ClickTooltip = ({ text, className = "w-48" }: { text: React.ReactNode, cla
         <Info className="w-3.5 h-3.5" />
       </button>
       {isOpen && (
-        <div className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-2 ${className} p-3 bg-slate-800 text-white text-[11px] rounded shadow-xl z-[60] text-left font-normal leading-relaxed pointer-events-none`}>
+        <div 
+          className={`fixed z-[100] p-3 bg-slate-800 text-white text-[11px] rounded shadow-xl text-left font-normal leading-relaxed pointer-events-none ${className}`}
+          style={{ 
+            top: pos.top - 6,
+            left: pos.left,
+            transform: align === 'right' ? 'translate(-100%, -100%)' : 'translate(-50%, -100%)'
+          }}
+        >
           {text}
-          <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-800"></div>
+          <div 
+            className={`absolute top-full border-4 border-transparent border-t-slate-800 ${
+              align === 'right' ? 'right-2' : 'left-1/2 -translate-x-1/2'
+            }`}
+          ></div>
         </div>
       )}
     </div>
@@ -137,7 +165,7 @@ const App: React.FC = () => {
           <Gamepad2 className="w-6 h-6" />
           <div className="flex items-baseline gap-2">
             <h1 className="text-lg font-black tracking-widest drop-shadow-md">BATTLE HUB</h1>
-            <span className="text-[10px] font-bold opacity-80 bg-black/20 px-1.5 py-0.5 rounded">v1.1.15</span>
+            <span className="text-[10px] font-bold opacity-80 bg-black/20 px-1.5 py-0.5 rounded">v1.1.16</span>
           </div>
         </div>
         <div className="flex items-center bg-white/20 rounded-lg px-2 py-1">
