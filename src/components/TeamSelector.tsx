@@ -41,7 +41,7 @@ export const TeamSelector: React.FC<TeamSelectorProps> = ({
   const filteredPokemon = React.useMemo(() => {
     if (!searchQuery) return [];
     const normalized = hiraToKata(searchQuery);
-    return pokemonData.filter(p => p.name.startsWith(normalized)).slice(0, 8);
+    return pokemonData.filter(p => p.name.startsWith(normalized)).slice(0, 50);
   }, [searchQuery, pokemonData]);
 
   return (

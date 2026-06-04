@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Shield, Zap, Target, Activity, Heart, Swords, Info, ChevronDown } from 'lucide-react';
+import { X, Shield, Zap, Target, Activity, Heart, Swords, Info, ChevronDown, Settings } from 'lucide-react';
 import movesData from '../data/moves.json';
 import learnsetsData from '../data/learnsets.json';
 import unimplementedMovesData from '../data/unimplemented_moves.json';
@@ -105,9 +105,10 @@ interface Props {
   pokemon: MyPokemon;
   onSave: (updated: MyPokemon) => void;
   onClose: () => void;
+  isOpponent?: boolean;
 }
 
-export const PokemonDetailModal: React.FC<Props> = ({ pokemon, onSave, onClose }) => {
+export const PokemonDetailModal: React.FC<Props> = ({ pokemon, onSave, onClose, isOpponent = false }) => {
   const [evs, setEvs] = useState<Stats>({ ...pokemon.evs });
   const [nature, setNature] = useState(pokemon.nature || NATURES[0]);
   const [ability, setAbility] = useState(pokemon.ability || pokemon.base.abilities[0]);
@@ -115,6 +116,7 @@ export const PokemonDetailModal: React.FC<Props> = ({ pokemon, onSave, onClose }
   const [moves, setMoves] = useState<(string | null)[]>(pokemon.moves || [null, null, null, null]);
   const [activeMoveIndex, setActiveMoveIndex] = useState<number | null>(null);
   const [moveSearchQuery, setMoveSearchQuery] = useState('');
+  const [showAdvancedSettings, setShowAdvancedSettings] = useState(false);
   const [activeItemSearch, setActiveItemSearch] = useState(false);
   const [itemSearchQuery, setItemSearchQuery] = useState('');
   const [activeNatureSelect, setActiveNatureSelect] = useState(false);
@@ -155,7 +157,7 @@ export const PokemonDetailModal: React.FC<Props> = ({ pokemon, onSave, onClose }
     const normalizedQuery = hiraToKata(query);
     return availableMoves
       .filter(m => hiraToKata(m.name).startsWith(normalizedQuery))
-      .slice(0, 30);
+      .slice(0, 50);
   };
 
   const totalEVs = Object.values(evs).reduce((a, b) => a + b, 0);
@@ -426,6 +428,17 @@ export const PokemonDetailModal: React.FC<Props> = ({ pokemon, onSave, onClose }
             </div>
           </div>
 
+          {isOpponent && !showAdvancedSettings ? (
+            <div className="pt-4 border-t border-slate-100 flex justify-center pb-2">
+              <button 
+                onClick={() => setShowAdvancedSettings(true)}
+                className="text-xs text-slate-500 hover:text-indigo-600 transition-colors flex items-center gap-1.5 font-bold bg-slate-50 px-4 py-2 rounded-full border border-slate-200 hover:border-indigo-200 hover:bg-indigo-50"
+              >
+                <Settings className="w-3.5 h-3.5" />
+                シミュレーション詳細設定（努力値を指定）
+              </button>
+            </div>
+          ) : (
           <div>
             <div className="flex items-end justify-between mb-2">
               <label className="block text-sm font-bold text-slate-700">努力値 (EVs)</label>
@@ -473,6 +486,7 @@ export const PokemonDetailModal: React.FC<Props> = ({ pokemon, onSave, onClose }
               ))}
             </div>
           </div>
+          )}
         </div>
 
         <div className="p-4 bg-slate-50 border-t">
