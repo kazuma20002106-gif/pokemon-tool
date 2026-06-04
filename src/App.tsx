@@ -137,7 +137,7 @@ const App: React.FC = () => {
           <Gamepad2 className="w-6 h-6" />
           <div className="flex items-baseline gap-2">
             <h1 className="text-lg font-black tracking-widest drop-shadow-md">BATTLE HUB</h1>
-            <span className="text-[10px] font-bold opacity-80 bg-black/20 px-1.5 py-0.5 rounded">v1.1.1</span>
+            <span className="text-[10px] font-bold opacity-80 bg-black/20 px-1.5 py-0.5 rounded">v1.1.2</span>
           </div>
         </div>
         <div className="flex items-center bg-white/20 rounded-lg px-2 py-1">
@@ -166,6 +166,7 @@ const App: React.FC = () => {
             searchQuery={opponentSearchQuery}
             onSearchChange={setOpponentSearchQuery}
             onAddPokemon={handleAddOpponent}
+            gameVersion={gameVersion}
             onRemovePokemon={(idx) => {
               const newTeam = [...opponentTeam];
               newTeam[idx] = null;
@@ -293,6 +294,7 @@ const App: React.FC = () => {
             searchQuery={myTeamSearchQuery}
             onSearchChange={setMyTeamSearchQuery}
             onAddPokemon={handleAddMyPokemon}
+            gameVersion={gameVersion}
             onRemovePokemon={(idx) => {
               const newTeam = [...myTeam];
               newTeam[idx] = null;

@@ -84,7 +84,7 @@ export const NATURES = [
 import itemsData from '../data/items.json';
 
 const itemsDict = itemsData as Record<string, string>;
-export const ITEMS = ["なし", ...Object.keys(itemsDict)];
+export const ITEMS = ["なし", ...Object.keys(itemsDict).sort((a, b) => a.localeCompare(b, "ja"))];
 
 const statLabels = [
   { key: 'hp', label: 'HP', icon: <Heart className="w-4 h-4 text-green-500" /> },
@@ -309,7 +309,7 @@ export const PokemonDetailModal: React.FC<Props> = ({ pokemon, onSave, onClose }
                     </div>
 
                     {isActive && moveSearchQuery && (
-                      <div className={`absolute z-[100] w-[200%] sm:w-[150%] max-w-[280px] ${index % 2 === 1 ? 'right-0' : 'left-0'} ${index < 2 ? 'top-full mt-1 flex-col' : 'bottom-full mb-1 flex-col-reverse'} bg-white border border-slate-200 rounded-xl shadow-[0_10px_40px_-15px_rgba(0,0,0,0.3)] max-h-48 overflow-y-auto flex`}>
+                      <div className={`absolute z-[100] w-[200%] sm:w-[150%] max-w-[280px] ${index % 2 === 1 ? 'right-0' : 'left-0'} ${'bottom-[calc(100%+8px)] flex-col'} bg-white border border-slate-200 rounded-xl shadow-[0_10px_40px_-15px_rgba(0,0,0,0.3)] max-h-48 overflow-y-auto flex`}>
                         {getFilteredMoves(moveSearchQuery).length > 0 ? (
                           (index < 2 ? getFilteredMoves(moveSearchQuery) : [...getFilteredMoves(moveSearchQuery)].reverse()).map(m => (
                             <button
