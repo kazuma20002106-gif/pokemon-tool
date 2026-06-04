@@ -83,7 +83,7 @@ export const DamageCalculator: React.FC<Props> = ({ myTeam, activePokemonIndices
   const oppHpEv = worstCaseMode || baseAssumption === 'h252' ? 252 : 0;
   const oppMaxHp = calculateStat(opponent.base.stats.hp, 31, oppHpEv, 50, 1.0, true);
 
-  const teamWithMoves = myTeam.filter((p, i) => p !== null && activePokemonIndices.includes(i) && p.moves && p.moves.some(m => m !== null)) as MyPokemon[];
+  const teamWithMoves = myTeam.filter((p, i) => p !== null && activePokemonIndices.includes(i)) as MyPokemon[];
 
   if (teamWithMoves.length === 0) {
     return (
@@ -141,7 +141,7 @@ export const DamageCalculator: React.FC<Props> = ({ myTeam, activePokemonIndices
                   baseAssumption === 'h0' ? 'bg-white text-slate-700 shadow-sm' : 'text-slate-500'
                 }`}
               >
-                ベース: H無振り
+                ベース: HP無振り
               </button>
               <button
                 onClick={() => setBaseAssumption('h252')}
@@ -149,7 +149,7 @@ export const DamageCalculator: React.FC<Props> = ({ myTeam, activePokemonIndices
                   baseAssumption === 'h252' ? 'bg-white text-slate-700 shadow-sm' : 'text-slate-500'
                 }`}
               >
-                ベース: H特化
+                ベース: HP特化
               </button>
             </div>
           )}
@@ -159,7 +159,7 @@ export const DamageCalculator: React.FC<Props> = ({ myTeam, activePokemonIndices
         <div className="flex justify-between items-end mb-3">
           <h4 className="text-sm font-bold text-slate-700">与ダメージ計算</h4>
           <span className="text-[10px] text-slate-500 font-medium bg-white px-2 py-1 rounded-md border border-slate-200">
-            相手想定: {worstCaseMode ? '防御/特防 特化 (技による)' : (baseAssumption === 'h252' ? 'H252 / B0 / D0' : 'H0 / B0 / D0')}
+            相手想定: {worstCaseMode ? '防御/特防 特化 (技による)' : (baseAssumption === 'h252' ? 'HP 252 / 防御 0 / 特防 0' : 'HP 0 / 防御 0 / 特防 0')}
           </span>
         </div>
       
@@ -169,7 +169,7 @@ export const DamageCalculator: React.FC<Props> = ({ myTeam, activePokemonIndices
         </div>
       )}
       
-      <div className="space-y-3">
+      <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:bg-slate-300 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-track]:bg-slate-100">
         {teamWithMoves.map((myPoke, i) => {
           const validMoves = myPoke.moves.filter(m => m !== null) as string[];
           if (validMoves.length === 0) {
@@ -320,7 +320,7 @@ export const DamageCalculator: React.FC<Props> = ({ myTeam, activePokemonIndices
                   else if (damage.minPercent >= 50) resultColor = "text-blue-600";
 
                   return (
-                    <div key={j} className="flex flex-col gap-1.5 mt-2 first:mt-0">
+                    <div key={j} className="flex flex-col gap-1.5 pt-3 mt-3 border-t border-dotted border-slate-300 first:border-0 first:pt-0 first:mt-0">
                       <div className="flex justify-between items-start text-xs">
                         <div className="font-bold text-slate-700 flex flex-col">
                           <div className="flex items-center flex-wrap gap-1">
