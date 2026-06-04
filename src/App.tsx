@@ -484,15 +484,15 @@ const App: React.FC = () => {
                             <button
                               key={mega.id}
                               onClick={() => { setOpponent(mega); setOppActiveAbility(mega.abilities[0] || ''); }}
-                              className="px-2 py-1 bg-gradient-to-r from-slate-700 to-slate-900 text-white text-[10px] font-bold rounded shadow-sm hover:from-slate-600 hover:to-slate-800 flex items-center"
+                              className="px-3 py-1.5 bg-gradient-to-r from-slate-700 to-slate-900 text-white text-[10px] font-bold rounded-lg shadow-md hover:from-slate-600 hover:to-slate-800 flex items-center"
                             >
-                              <Zap className="w-3 h-3 mr-1 text-yellow-400" />
-                              {mega.name.replace('メガ' + basePokemon?.name, 'メガ')}
+                              <Zap className="w-3.5 h-3.5 mr-1.5 text-yellow-400" />
+                              {mega.name} に切り替え
                             </button>
                           )) : basePokemon && (
                             <button
                               onClick={() => { setOpponent(basePokemon); setOppActiveAbility(basePokemon.abilities[0] || ''); }}
-                              className="px-2 py-1 bg-slate-200 text-slate-600 text-[10px] font-bold rounded shadow-sm hover:bg-slate-300 flex items-center"
+                              className="px-3 py-1.5 bg-slate-200 text-slate-700 text-[10px] font-bold rounded-lg shadow-md hover:bg-slate-300 flex items-center"
                             >
                               元の姿に戻す
                             </button>
