@@ -1,6 +1,6 @@
 import React from 'react';
 import { Plus, X, Search } from 'lucide-react';
-import { MyPokemon, Pokemon } from './PokemonDetailModal';
+import { MyPokemon, Pokemon, TypeBadge } from './PokemonDetailModal';
 import megaIds from '../data/megaIds.json';
 
 interface TeamSelectorProps {
@@ -105,7 +105,7 @@ export const TeamSelector: React.FC<TeamSelectorProps> = ({
           </div>
 
           {searchQuery && filteredPokemon.length > 0 && (
-            <div className="mt-2 bg-white border border-slate-200 rounded-xl shadow-lg max-h-48 overflow-y-auto absolute z-50 w-[calc(100%-24px)] max-w-[400px]">
+            <div className="bottom-[calc(100%-12px)] left-3 mb-2 bg-white border border-slate-200 rounded-xl shadow-lg max-h-48 overflow-y-auto absolute z-[100] w-[calc(100%-24px)] max-w-[400px]">
               {filteredPokemon.map((p) => (
                 <button
                   key={p.id}
@@ -116,13 +116,18 @@ export const TeamSelector: React.FC<TeamSelectorProps> = ({
                     onSearchChange('');
                   }}
                 >
-                  <div className="flex items-center gap-2">
-                    <img 
-                      src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${p.id}.png`}
-                      alt=""
-                      className="w-8 h-8 object-contain"
-                    />
-                    <span className="font-bold text-slate-700">{p.name}</span>
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-center gap-2">
+                      <img 
+                        src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${p.id}.png`}
+                        alt=""
+                        className="w-8 h-8 object-contain"
+                      />
+                      <span className="font-bold text-slate-700">{p.name}</span>
+                    </div>
+                  </div>
+                  <div className="flex gap-1">
+                    {p.types.map(t => <TypeBadge key={t} type={t} />)}
                   </div>
                 </button>
               ))}

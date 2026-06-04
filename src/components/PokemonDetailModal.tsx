@@ -31,7 +31,7 @@ const ClickTooltip = ({ text, className = "w-48" }: { text: string, className?: 
   );
 };
 
-const TypeBadge = ({ type }: { type: string }) => {
+export const TypeBadge = ({ type }: { type: string }) => {
   const colors: Record<string, string> = {
     'ノーマル': 'bg-stone-400', 'ほのお': 'bg-red-500', 'みず': 'bg-blue-500', 'くさ': 'bg-green-500',
     'でんき': 'bg-yellow-400', 'こおり': 'bg-cyan-300', 'かくとう': 'bg-orange-600', 'どく': 'bg-purple-500',

@@ -20,7 +20,7 @@ for m in megas:
     try:
         with urllib.request.urlopen(req2) as response2:
             s_data = json.loads(response2.read().decode('utf-8'))
-        j_name = next(n['name'] for n in s_data['names'] if n['language']['name'] == 'ja-Hrkt')
+        j_name = next(n['name'] for n in s_data['names'] if n['language']['name'] in ['ja-hrkt', 'ja'])
         
         prefix = 'ゲンシ' if '-primal' in m['name'] else 'メガ'
         suffix = 'X' if '-x' in m['name'] else 'Y' if '-y' in m['name'] else ''
