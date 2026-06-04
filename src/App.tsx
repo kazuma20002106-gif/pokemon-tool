@@ -658,8 +658,8 @@ const App: React.FC = () => {
                       statusText = "絶対抜かれる";
                       textColor = "text-red-600";
                     } else {
-                      let requiredEV = -1;
-                      let needsPlusNature = false;
+                      let reqNeutral = -1;
+                      let reqPlus = -1;
 
                       for (let ev4 = 0; ev4 <= 63; ev4++) {
                         let spdNeutral = Math.floor((opponent.stats.speed * 2 + 31 + ev4) * 50 / 100) + 5;
@@ -674,19 +674,26 @@ const App: React.FC = () => {
                           spdPlus = Math.floor(spdPlus * weatherMult);
                         }
 
-                        if (spdNeutral > mySpeed) {
-                          requiredEV = ev4 * 4;
-                          needsPlusNature = false;
-                          break;
-                        } else if (spdPlus > mySpeed) {
-                          requiredEV = ev4 * 4;
-                          needsPlusNature = true;
-                          break;
+                        if (reqNeutral === -1 && spdNeutral >= mySpeed) {
+                          reqNeutral = ev4 * 4;
                         }
+                        if (reqPlus === -1 && spdPlus >= mySpeed) {
+                          reqPlus = ev4 * 4;
+                        }
+                        
+                        if (reqNeutral !== -1 && reqPlus !== -1) break;
                       }
                       
-                      if (requiredEV !== -1) {
-                        statusText = `S${requiredEV}以上${needsPlusNature ? '(上昇補正)' : ''}振られていなければ先行`;
+                      if (reqNeutral === 0) {
+                        statusText = "無振り相手と同速か抜かれる";
+                      } else {
+                        if (reqNeutral !== -1 && reqPlus !== -1) {
+                          statusText = `S${reqNeutral}(無補正) または S${reqPlus}(上昇) 以上振られていなければ先行`;
+                        } else if (reqPlus !== -1) {
+                          statusText = `S${reqPlus}(上昇補正) 以上振られていなければ先行`;
+                        } else if (reqNeutral !== -1) {
+                          statusText = `S${reqNeutral}(無補正) 以上振られていなければ先行`;
+                        }
                       }
                     }
 
