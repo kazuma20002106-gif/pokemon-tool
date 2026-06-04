@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Shield, Zap, Target, Activity, Heart, Swords, Info, ChevronDown } from 'lucide-react';
 import movesData from '../data/moves.json';
 import learnsetsData from '../data/learnsets.json';
@@ -120,7 +120,25 @@ export const PokemonDetailModal: React.FC<Props> = ({ pokemon, onSave, onClose }
   const [activeNatureSelect, setActiveNatureSelect] = useState(false);
   const [showUnimplemented, setShowUnimplemented] = useState(false);
 
-  const getFilteredMoves = (query: string) => {
+  useEffect(() => {
+    if (activeItemSearch && item !== "なし") {
+      setTimeout(() => {
+        const el = document.getElementById(`item-btn-${item}`);
+        if (el) el.scrollIntoView({ block: 'center' });
+      }, 0);
+    }
+  }, [activeItemSearch]);
+
+  useEffect(() => {
+    if (activeMoveIndex !== null && moves[activeMoveIndex]) {
+      setTimeout(() => {
+        const el = document.getElementById(`move-btn-${activeMoveIndex}-${moves[activeMoveIndex]}`);
+        if (el) el.scrollIntoView({ block: 'center' });
+      }, 0);
+    }
+  }, [activeMoveIndex]);
+
+  const getFilteredMoves = (query: string, currentMove: string | null) => {
     let availableMoves = movesData;
     
     const myLearnset = learnsets[pokemon.base.name];
@@ -132,7 +150,7 @@ export const PokemonDetailModal: React.FC<Props> = ({ pokemon, onSave, onClose }
       availableMoves = availableMoves.filter(m => !unimplementedMoves.includes(m.name));
     }
 
-    if (!query) return [];
+    if (!query || query === currentMove) return availableMoves;
     
     const normalizedQuery = hiraToKata(query);
     return availableMoves
@@ -282,10 +300,11 @@ export const PokemonDetailModal: React.FC<Props> = ({ pokemon, onSave, onClose }
               </div>
               {activeItemSearch && (
                 <div className="absolute bottom-full mb-1 left-0 z-[100] w-[150%] max-w-[240px] bg-slate-800 text-white rounded-xl shadow-2xl max-h-60 overflow-y-auto border border-slate-700">
-                  {ITEMS.filter(i => hiraToKata(i).includes(hiraToKata(itemSearchQuery))).map(i => (
+                  {(itemSearchQuery === item || !itemSearchQuery ? ITEMS : ITEMS.filter(i => hiraToKata(i).includes(hiraToKata(itemSearchQuery)))).map(i => (
                     <button
                       key={i}
-                      className="w-full text-left px-3 py-2 text-xs hover:bg-slate-700 border-b border-slate-700/50 last:border-0"
+                      id={`item-btn-${i}`}
+                      className={`w-full text-left px-3 py-2 text-xs hover:bg-slate-700 border-b border-slate-700/50 last:border-0 ${item === i ? 'bg-indigo-600 font-bold' : ''}`}
                       onMouseDown={(e) => {
                         e.preventDefault();
                         setItem(i);
@@ -295,7 +314,7 @@ export const PokemonDetailModal: React.FC<Props> = ({ pokemon, onSave, onClose }
                       {i}
                     </button>
                   ))}
-                  {ITEMS.filter(i => hiraToKata(i).includes(hiraToKata(itemSearchQuery))).length === 0 && (
+                  {(itemSearchQuery === item || !itemSearchQuery ? ITEMS : ITEMS.filter(i => hiraToKata(i).includes(hiraToKata(itemSearchQuery)))).length === 0 && (
                     <div className="p-3 text-center text-xs text-slate-400">見つかりません</div>
                   )}
                 </div>
@@ -371,13 +390,14 @@ export const PokemonDetailModal: React.FC<Props> = ({ pokemon, onSave, onClose }
                       )}
                     </div>
 
-                    {isActive && moveSearchQuery && (
+                    {isActive && (
                       <div className={`absolute z-[100] w-[200%] sm:w-[150%] max-w-[280px] ${index % 2 === 1 ? 'right-0' : 'left-0'} ${'bottom-[calc(100%+8px)] flex-col'} bg-white border border-slate-200 rounded-xl shadow-[0_10px_40px_-15px_rgba(0,0,0,0.3)] max-h-48 overflow-y-auto flex`}>
-                        {getFilteredMoves(moveSearchQuery).length > 0 ? (
-                          (index < 2 ? getFilteredMoves(moveSearchQuery) : [...getFilteredMoves(moveSearchQuery)].reverse()).map(m => (
+                        {getFilteredMoves(moveSearchQuery, moves[index]).length > 0 ? (
+                          (index < 2 ? getFilteredMoves(moveSearchQuery, moves[index]) : [...getFilteredMoves(moveSearchQuery, moves[index])].reverse()).map(m => (
                             <button
                               key={m.name}
-                              className="w-full text-left p-2.5 hover:bg-slate-50 border-b border-slate-50 last:border-0 flex justify-between items-center text-sm transition-colors"
+                              id={`move-btn-${index}-${m.name}`}
+                              className={`w-full text-left p-2.5 hover:bg-slate-50 border-b border-slate-50 last:border-0 flex justify-between items-center text-sm transition-colors ${moves[index] === m.name ? 'bg-indigo-50 font-bold text-indigo-700' : ''}`}
                               onMouseDown={(e) => { e.preventDefault(); }}
                               onClick={() => {
                                 const newMoves = [...moves];
