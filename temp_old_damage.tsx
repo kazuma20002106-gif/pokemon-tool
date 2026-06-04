@@ -1,20 +1,61 @@
 import React, { useState } from 'react';
-import { MyPokemon } from './PokemonDetailModal';
+import { Info } from 'lucide-react';
+import { Pokemon, MyPokemon } from './PokemonDetailModal';
 import { calculateDamage, getEffectiveness } from '../utils/damageCalc';
 import { calculateStat, getNatureMultiplier, applyStatRank } from '../utils/statsCalc';
 import movesData from '../data/moves.json';
-import { Info, ShieldAlert, Swords } from 'lucide-react';
+import { ChevronUp, ChevronDown, Minus, Plus, ShieldAlert, Swords } from 'lucide-react';
 import { BattleStatRanks } from '../App';
 
 interface Props {
   myTeam: (MyPokemon | null)[];
   activePokemonIndices: number[];
-  myBattleRanks: Record<number, BattleStatRanks>;
-  opponent: MyPokemon;
-  oppRanks: BattleStatRanks;
+  battleRanks: Record<number, BattleStatRanks>;
+  onRankChange: (index: number, stat: keyof BattleStatRanks, value: number) => void;
+  opponent: Pokemon;
   weather: string;
+  oppActiveAbility: string;
+  oppActiveItem?: string;
 }
 
+const RankGauge = ({ value, onChange, label }: { value: number, onChange: (v: number) => void, label: string }) => {
+  return (
+    <div className="flex items-center gap-1.5 text-[10px]">
+      <div className="w-6 font-bold text-slate-500">{label}</div>
+      <button onClick={() => onChange(value - 1)} className="p-0.5 bg-slate-100 rounded text-slate-500 hover:bg-slate-200">
+        <Minus className="w-3 h-3" />
+      </button>
+      
+      <div className="flex-1 flex gap-px h-2.5 bg-slate-200 rounded overflow-hidden">
+        <div className="flex flex-1 gap-px justify-end bg-slate-100">
+          {[6,5,4,3,2,1].map(i => (
+            <div key={i} className={`flex-1 ${value <= -i ? 'bg-blue-400' : 'bg-transparent'}`} />
+          ))}
+        </div>
+        <div className="w-px bg-slate-300" />
+        <div className="flex flex-1 gap-px bg-slate-100">
+          {[1,2,3,4,5,6].map(i => (
+            <div key={i} className={`flex-1 ${value >= i ? 'bg-amber-400' : 'bg-transparent'}`} />
+          ))}
+        </div>
+      </div>
+
+      <button onClick={() => onChange(value + 1)} className="p-0.5 bg-slate-100 rounded text-slate-500 hover:bg-slate-200">
+        <Plus className="w-3 h-3" />
+      </button>
+      
+      <div className="w-7 text-right font-bold flex items-center justify-end">
+        {value > 0 ? (
+          <span className="text-amber-500 flex items-center"><ChevronUp className="w-3 h-3 -mr-0.5" />{value}</span>
+        ) : value < 0 ? (
+          <span className="text-blue-500 flex items-center"><ChevronDown className="w-3 h-3 -mr-0.5" />{Math.abs(value)}</span>
+        ) : (
+          <span className="text-slate-400 text-center w-full">±0</span>
+        )}
+      </div>
+    </div>
+  );
+};
 
 const InfoTooltip = ({ text, className = "w-48" }: { text: string, className?: string }) => {
   const [isOpen, setIsOpen] = React.useState(false);
@@ -38,28 +79,24 @@ const InfoTooltip = ({ text, className = "w-48" }: { text: string, className?: s
   );
 };
 
-export const DamageCalculator: React.FC<Props> = ({ myTeam, activePokemonIndices, myBattleRanks, opponent, oppRanks, weather }) => {
-  const oppActiveAbility = opponent.ability;
-  const oppActiveItem = opponent.item || "なし";
-  const battleRanks = myBattleRanks;
-  
+export const DamageCalculator: React.FC<Props> = ({ myTeam, activePokemonIndices, battleRanks, onRankChange, opponent, weather, oppActiveAbility, oppActiveItem }) => {
   const [worstCaseMode, setWorstCaseMode] = useState(false);
 
   // Opponent defensive stats (assume 252 HP / 0 Def / 0 SpD as default for MVP, or just H252)
   // HP: 252 EV, Def/SpD: 0 EV, Nature: 1.0
-  const oppMaxHp = calculateStat(opponent.base.stats.hp, 31, 252, 50, 1.0, true);
-  let oppDef = applyStatRank(calculateStat(opponent.base.stats.defense, 31, 0, 50, 1.0, false), oppRanks.defense);
-  let oppSpDef = applyStatRank(calculateStat(opponent.base.stats.spDefense, 31, 0, 50, 1.0, false), oppRanks.spDefense);
+  const oppMaxHp = calculateStat(opponent.stats.hp, 31, 252, 50, 1.0, true);
+  let oppDef = calculateStat(opponent.stats.defense, 31, 0, 50, 1.0, false);
+  let oppSpDef = calculateStat(opponent.stats.spDefense, 31, 0, 50, 1.0, false);
 
   if (oppActiveItem === "とつげきチョッキ") {
     oppSpDef = Math.floor(oppSpDef * 1.5);
   }
 
   // 天候による耐久アップ効果
-  if (weather === 'sandstorm' && opponent.base.types.includes('いわ')) {
+  if (weather === 'sandstorm' && opponent.types.includes('いわ')) {
     oppSpDef = Math.floor(oppSpDef * 1.5);
   }
-  if (weather === 'snow' && opponent.base.types.includes('こおり')) {
+  if (weather === 'snow' && opponent.types.includes('こおり')) {
     oppDef = Math.floor(oppDef * 1.5);
   }
 
@@ -135,7 +172,26 @@ export const DamageCalculator: React.FC<Props> = ({ myTeam, activePokemonIndices
                 </div>
               </div>
               
-
+              <div className="bg-slate-50 rounded-lg p-2 mb-3 border border-slate-100">
+                <div className="text-[10px] text-slate-500 font-bold mb-1.5">対面ランク補正</div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1.5">
+                  <RankGauge 
+                    label="攻撃" 
+                    value={battleRanks[i]?.attack || 0} 
+                    onChange={(v) => onRankChange(i, 'attack', v)} 
+                  />
+                  <RankGauge 
+                    label="特攻" 
+                    value={battleRanks[i]?.spAttack || 0} 
+                    onChange={(v) => onRankChange(i, 'spAttack', v)} 
+                  />
+                  <RankGauge 
+                    label="素早" 
+                    value={battleRanks[i]?.speed || 0} 
+                    onChange={(v) => onRankChange(i, 'speed', v)} 
+                  />
+                </div>
+              </div>
               
               <div className="space-y-2">
                 {validMoves.map((moveName, j) => {
@@ -187,7 +243,7 @@ export const DamageCalculator: React.FC<Props> = ({ myTeam, activePokemonIndices
                   let currentOppItem = oppActiveItem || "なし";
                   if (worstCaseMode) {
                     currentOppItem = "なし"; // fallback
-                    const effectiveness = getEffectiveness(moveData.type, opponent.base.types);
+                    const effectiveness = getEffectiveness(moveData.type, opponent.types);
                     if (effectiveness > 1) {
                       const berryForType: Record<string, string> = {
                         "ほのお": "オッカのみ", "みず": "イトケのみ", "でんき": "ソクノのみ", "くさ": "リンドのみ",
@@ -216,7 +272,7 @@ export const DamageCalculator: React.FC<Props> = ({ myTeam, activePokemonIndices
                     targetDef,
                     moveData.type,
                     myPoke.base.types,
-                    opponent.base.types,
+                    opponent.types,
                     oppMaxHp,
                     myPoke.ability,
                     [oppActiveAbility],

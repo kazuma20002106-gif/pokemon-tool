@@ -1,4 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import os
+
+content = """import React, { useState, useEffect } from 'react';
 import svData from './data/sv.json';
 import championsData from './data/champions.json';
 import { Gamepad2, Sun, CloudRain, Wind, Snowflake, Info, Swords } from 'lucide-react';
@@ -6,6 +8,7 @@ import { PokemonDetailModal, Pokemon, MyPokemon, NATURES } from './components/Po
 import { DamageCalculator } from './components/DamageCalculator';
 import { BattlePokemonCard } from './components/BattlePokemonCard';
 import { TeamSelector } from './components/TeamSelector';
+import { applyStatRank } from './utils/statsCalc';
 
 export type BattleStatRanks = { attack: number, defense: number, spAttack: number, spDefense: number, speed: number };
 type GameVersion = 'champions' | 'sv';
@@ -54,6 +57,7 @@ const App: React.FC = () => {
 
   // Field State
   const [weather, setWeather] = useState<string>('none');
+  const [assumeOpponentScarf, setAssumeOpponentScarf] = useState(false);
 
   const pokemonData = (gameVersion === 'champions' ? championsData : svData) as Pokemon[];
 
@@ -324,7 +328,8 @@ const App: React.FC = () => {
       {/* モーダル */}
       {editingTeam !== null && editingIndex !== null && (
         <PokemonDetailModal
-          pokemon={editingTeam === 'my' ? myTeam[editingIndex]! : opponentTeam[editingIndex]!}
+          pokemon={editingTeam === 'my' ? myTeam[editingIndex]!.base : opponentTeam[editingIndex]!.base}
+          initialData={editingTeam === 'my' ? myTeam[editingIndex] : opponentTeam[editingIndex]}
           onClose={() => { setEditingTeam(null); setEditingIndex(null); }}
           onSave={(updatedPokemon) => {
             if (editingTeam === 'my') {
@@ -339,6 +344,7 @@ const App: React.FC = () => {
             setEditingTeam(null);
             setEditingIndex(null);
           }}
+          gameVersion={gameVersion}
         />
       )}
     </div>
@@ -346,3 +352,9 @@ const App: React.FC = () => {
 };
 
 export default App;
+"""
+
+with open('src/App.tsx', 'w', encoding='utf-8') as f:
+    f.write(content)
+
+print("Created new App.tsx")
