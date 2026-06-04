@@ -109,6 +109,8 @@ export const PokemonDetailModal: React.FC<Props> = ({ pokemon, onSave, onClose }
   const [moves, setMoves] = useState<(string | null)[]>(pokemon.moves || [null, null, null, null]);
   const [activeMoveIndex, setActiveMoveIndex] = useState<number | null>(null);
   const [moveSearchQuery, setMoveSearchQuery] = useState('');
+  const [activeItemSearch, setActiveItemSearch] = useState(false);
+  const [itemSearchQuery, setItemSearchQuery] = useState('');
   const [showUnimplemented, setShowUnimplemented] = useState(false);
 
   const getFilteredMoves = (query: string) => {
@@ -157,9 +159,9 @@ export const PokemonDetailModal: React.FC<Props> = ({ pokemon, onSave, onClose }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/40 backdrop-blur-sm animate-[fadeIn_0.2s_ease-out]">
-      <div className="bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-2xl shadow-2xl overflow-hidden animate-[slideUp_0.3s_ease-out]">
-        <div className="p-4 bg-slate-100 border-b flex items-center justify-between">
+    <div className="fixed inset-0 z-50 flex justify-center p-0 sm:p-4 bg-slate-900/40 backdrop-blur-sm animate-[fadeIn_0.2s_ease-out] overflow-y-auto">
+      <div className="bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-2xl shadow-2xl animate-[slideUp_0.3s_ease-out] my-auto h-fit relative">
+        <div className="p-4 bg-slate-100 border-b flex items-center justify-between rounded-t-3xl sm:rounded-t-2xl">
           <h2 className="font-bold text-slate-800 flex items-center">
             {pokemon.base.name} の詳細設定
           </h2>
@@ -168,7 +170,7 @@ export const PokemonDetailModal: React.FC<Props> = ({ pokemon, onSave, onClose }
           </button>
         </div>
 
-        <div className="p-4 space-y-6 max-h-[70vh] overflow-y-auto">
+        <div className="p-4 space-y-6 pb-12">
           <div className="grid grid-cols-3 gap-3">
             <div>
               <label className="flex items-center text-xs font-bold text-slate-500 mb-1">
@@ -196,17 +198,49 @@ export const PokemonDetailModal: React.FC<Props> = ({ pokemon, onSave, onClose }
                 {NATURES.map(n => <option key={n} value={n}>{n.split(' ')[0]}</option>)}
               </select>
             </div>
-            <div>
+            <div className="relative">
               <label className="block text-xs font-bold text-slate-500 mb-1">もちもの</label>
-              <select 
-                value={item} 
-                onChange={e => setItem(e.target.value)}
-                className="w-full p-2 text-xs bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-indigo-400"
-              >
-                {ITEMS.map(i => <option key={i} value={i}>{i}</option>)}
-              </select>
-              {item !== "なし" && itemsDict[item] && (
-                <div className="mt-1 text-[10px] text-slate-500 line-clamp-2">
+              <input
+                value={activeItemSearch ? itemSearchQuery : item}
+                onChange={e => {
+                  setItemSearchQuery(e.target.value);
+                  if (!activeItemSearch) setActiveItemSearch(true);
+                }}
+                onFocus={() => {
+                  setActiveItemSearch(true);
+                  setItemSearchQuery(item === "なし" ? "" : item);
+                }}
+                onBlur={() => {
+                  setTimeout(() => {
+                    setActiveItemSearch(false);
+                    setItemSearchQuery(item);
+                  }, 200);
+                }}
+                className="w-full p-2 text-xs bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-indigo-400 placeholder:text-slate-400"
+                placeholder="検索..."
+              />
+              {activeItemSearch && (
+                <div className="absolute bottom-full mb-1 left-0 z-[100] w-[150%] max-w-[240px] bg-slate-800 text-white rounded-xl shadow-2xl max-h-60 overflow-y-auto border border-slate-700">
+                  {ITEMS.filter(i => i.includes(itemSearchQuery)).map(i => (
+                    <button
+                      key={i}
+                      className="w-full text-left px-3 py-2 text-xs hover:bg-slate-700 border-b border-slate-700/50 last:border-0"
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        setItem(i);
+                        setActiveItemSearch(false);
+                      }}
+                    >
+                      {i}
+                    </button>
+                  ))}
+                  {ITEMS.filter(i => i.includes(itemSearchQuery)).length === 0 && (
+                    <div className="p-3 text-center text-xs text-slate-400">見つかりません</div>
+                  )}
+                </div>
+              )}
+              {item !== "なし" && !activeItemSearch && itemsDict[item] && (
+                <div className="absolute top-full mt-1 left-0 w-[150%] max-w-[240px] z-40 text-[10px] text-slate-600 bg-white border border-slate-200 shadow-lg p-2 rounded-lg line-clamp-2">
                   {itemsDict[item]}
                 </div>
               )}

@@ -79,6 +79,9 @@ const App: React.FC = () => {
   const [weather, setWeather] = useState<string>('none');
   const [oppActiveAbility, setOppActiveAbility] = useState<string>('');
   const [oppActiveItem, setOppActiveItem] = useState<string>('なし');
+  const [oppActiveItemSearch, setOppActiveItemSearch] = useState(false);
+  const [oppItemSearchQuery, setOppItemSearchQuery] = useState('');
+  const [assumeOpponentScarf, setAssumeOpponentScarf] = useState(false);
   
   // バトル選出状態
   const [activePokemonIndices, setActivePokemonIndices] = useState<number[]>([0,1,2,3,4,5]);
@@ -528,16 +531,48 @@ const App: React.FC = () => {
                   )}
 
                   {/* 相手の道具 */}
-                  <div className="mb-4">
+                  <div className="mb-4 relative">
                     <label className="block text-[10px] font-bold text-slate-500 mb-2">想定もちもの</label>
-                    <select 
-                      value={oppActiveItem} 
-                      onChange={e => setOppActiveItem(e.target.value)}
-                      className="w-full p-2 text-sm bg-white border border-slate-200 rounded-lg outline-none focus:border-amber-400 font-bold text-slate-700 shadow-sm"
-                    >
-                      {ITEMS.map(i => <option key={i} value={i}>{i}</option>)}
-                    </select>
-                    {oppActiveItem !== "なし" && itemsDict[oppActiveItem] && (
+                    <input 
+                      value={oppActiveItemSearch ? oppItemSearchQuery : oppActiveItem} 
+                      onChange={e => {
+                        setOppItemSearchQuery(e.target.value);
+                        if (!oppActiveItemSearch) setOppActiveItemSearch(true);
+                      }}
+                      onFocus={() => {
+                        setOppActiveItemSearch(true);
+                        setOppItemSearchQuery(oppActiveItem === "なし" ? "" : oppActiveItem);
+                      }}
+                      onBlur={() => {
+                        setTimeout(() => {
+                           setOppActiveItemSearch(false);
+                           setOppItemSearchQuery(oppActiveItem);
+                        }, 200);
+                      }}
+                      className="w-full p-2 text-sm bg-white border border-slate-200 rounded-lg outline-none focus:border-amber-400 font-bold text-slate-700 shadow-sm placeholder:font-normal"
+                      placeholder="もちものを検索..."
+                    />
+                    {oppActiveItemSearch && (
+                      <div className="absolute bottom-full mb-1 left-0 z-[100] w-[150%] max-w-sm bg-slate-800 text-white rounded-xl shadow-2xl max-h-60 overflow-y-auto border border-slate-700">
+                         {ITEMS.filter(i => i.includes(oppItemSearchQuery)).map(i => (
+                           <button
+                             key={i}
+                             className="w-full text-left px-3 py-2 text-xs hover:bg-slate-700 border-b border-slate-700/50 last:border-0"
+                             onMouseDown={(e) => {
+                               e.preventDefault();
+                               setOppActiveItem(i);
+                               setOppActiveItemSearch(false);
+                             }}
+                           >
+                             {i}
+                           </button>
+                         ))}
+                         {ITEMS.filter(i => i.includes(oppItemSearchQuery)).length === 0 && (
+                           <div className="p-3 text-center text-xs text-slate-400">見つかりません</div>
+                         )}
+                      </div>
+                    )}
+                    {oppActiveItem !== "なし" && !oppActiveItemSearch && itemsDict[oppActiveItem] && (
                       <div className="mt-2 text-xs text-slate-600 bg-amber-50 p-2 rounded-lg border border-amber-100 shadow-sm">
                         <span className="font-bold text-amber-700">効果:</span> {itemsDict[oppActiveItem]}
                       </div>
@@ -566,32 +601,44 @@ const App: React.FC = () => {
                 
                 {/* 爆速素早さ比較 */}
                 <div className="space-y-2">
-                  <h4 className="text-xs font-bold text-slate-500 ml-1">自陣との素早さ比較 (相手の無振〜最速想定)</h4>
+                  <div className="flex items-center justify-between ml-1">
+                    <h4 className="text-xs font-bold text-slate-500">自陣との素早さ比較</h4>
+                    <button
+                      onClick={() => setAssumeOpponentScarf(!assumeOpponentScarf)}
+                      className={`flex items-center gap-1.5 px-2 py-1 rounded text-[10px] font-bold transition-colors shadow-sm border ${
+                        assumeOpponentScarf ? 'bg-amber-500 text-white border-amber-600' : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'
+                      }`}
+                    >
+                      <span>スカーフ想定</span>
+                      <div className={`w-6 h-3.5 rounded-full relative transition-colors ${assumeOpponentScarf ? 'bg-amber-400' : 'bg-slate-200'}`}>
+                        <div className={`absolute top-0.5 w-2.5 h-2.5 rounded-full bg-white shadow-sm transition-all ${assumeOpponentScarf ? 'right-0.5' : 'left-0.5'}`} />
+                      </div>
+                    </button>
+                  </div>
                   {myTeam.map((myPoke, i) => {
                     if (!myPoke || !activePokemonIndices.includes(i)) return null;
                     
                     const myRanks = getBattleRanks(i);
                     const mySpeed = calculateActualSpeed(myPoke, myRanks.speed);
-                    // 相手の素早さ(無振り) = (種族値×2 + 31) × 50 / 100 + 5
-                    let oppMinSpeed = Math.floor((opponent.stats.speed * 2 + 31) * 50 / 100 + 5);
-                    // 相手の素早さ(最速) = ((種族値×2 + 31 + 252/4) × 50 / 100 + 5) × 1.1
-                    let oppMaxSpeed = Math.floor((Math.floor((opponent.stats.speed * 2 + 31 + 63) * 50 / 100) + 5) * 1.1);
                     
-                    // アイテム補正
-                    if (oppActiveItem === 'こだわりスカーフ') {
-                      oppMinSpeed = Math.floor(oppMinSpeed * 1.5);
-                      oppMaxSpeed = Math.floor(oppMaxSpeed * 1.5);
-                    }
-
-                    // 天候と相手特性による素早さ補正
+                    let weatherMult = 1;
                     if ((oppActiveAbility === 'すいすい' && weather === 'rain') ||
                         (oppActiveAbility === 'ようりょくそ' && weather === 'sun') ||
                         (oppActiveAbility === 'すなかき' && weather === 'sandstorm') ||
                         (oppActiveAbility === 'ゆきかき' && weather === 'snow')) {
-                      oppMinSpeed = Math.floor(oppMinSpeed * 2);
-                      oppMaxSpeed = Math.floor(oppMaxSpeed * 2);
+                      weatherMult = 2;
                     }
                     
+                    let hasScarf = assumeOpponentScarf || oppActiveItem === 'こだわりスカーフ';
+
+                    let oppMinSpeed = Math.floor((opponent.stats.speed * 2 + 31) * 50 / 100 + 5);
+                    if (hasScarf) oppMinSpeed = Math.floor(oppMinSpeed * 1.5);
+                    if (weatherMult > 1) oppMinSpeed = Math.floor(oppMinSpeed * weatherMult);
+
+                    let oppMaxSpeed = Math.floor((Math.floor((opponent.stats.speed * 2 + 31 + 63) * 50 / 100) + 5) * 1.1);
+                    if (hasScarf) oppMaxSpeed = Math.floor(oppMaxSpeed * 1.5);
+                    if (weatherMult > 1) oppMaxSpeed = Math.floor(oppMaxSpeed * weatherMult);
+
                     const isFasterThanMax = mySpeed > oppMaxSpeed;
                     const isSlowerThanMin = mySpeed < oppMinSpeed;
                     
@@ -610,6 +657,37 @@ const App: React.FC = () => {
                       icon = <ChevronDown className="w-6 h-6 text-red-500 drop-shadow-sm" />;
                       statusText = "絶対抜かれる";
                       textColor = "text-red-600";
+                    } else {
+                      let requiredEV = -1;
+                      let needsPlusNature = false;
+
+                      for (let ev4 = 0; ev4 <= 63; ev4++) {
+                        let spdNeutral = Math.floor((opponent.stats.speed * 2 + 31 + ev4) * 50 / 100) + 5;
+                        let spdPlus = Math.floor(spdNeutral * 1.1);
+                        
+                        if (hasScarf) {
+                          spdNeutral = Math.floor(spdNeutral * 1.5);
+                          spdPlus = Math.floor(spdPlus * 1.5);
+                        }
+                        if (weatherMult > 1) {
+                          spdNeutral = Math.floor(spdNeutral * weatherMult);
+                          spdPlus = Math.floor(spdPlus * weatherMult);
+                        }
+
+                        if (spdNeutral > mySpeed) {
+                          requiredEV = ev4 * 4;
+                          needsPlusNature = false;
+                          break;
+                        } else if (spdPlus > mySpeed) {
+                          requiredEV = ev4 * 4;
+                          needsPlusNature = true;
+                          break;
+                        }
+                      }
+                      
+                      if (requiredEV !== -1) {
+                        statusText = `S${requiredEV}以上${needsPlusNature ? '(上昇補正)' : ''}振られていなければ先行`;
+                      }
                     }
 
                     return (

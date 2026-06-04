@@ -290,9 +290,14 @@ export const DamageCalculator: React.FC<Props> = ({ myTeam, activePokemonIndices
                     <div key={j} className="flex flex-col gap-1.5 mt-2 first:mt-0">
                       <div className="flex justify-between items-start text-xs">
                         <div className="font-bold text-slate-700 flex flex-col">
-                          <div className="flex items-center">
+                          <div className="flex items-center flex-wrap gap-1">
                             {moveName} 
-                            <span className="text-[10px] text-slate-400 ml-1 font-normal">({moveData.type} / 威力{moveData.power})</span>
+                            <span className="text-[10px] text-slate-400 font-normal">({moveData.type} / 威力{moveData.power})</span>
+                            {worstCaseMode && currentOppItem !== "なし" && (
+                              <span className="text-[9px] bg-rose-100 text-rose-700 px-1 py-0.5 rounded shadow-sm border border-rose-200 ml-1">
+                                盾想定: {currentOppItem}
+                              </span>
+                            )}
                           </div>
                           <div className="flex items-center gap-1 mt-1 flex-wrap">
                             {damage.stabBonus > 1 && (
