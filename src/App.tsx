@@ -137,7 +137,7 @@ const App: React.FC = () => {
           <Gamepad2 className="w-6 h-6" />
           <div className="flex items-baseline gap-2">
             <h1 className="text-lg font-black tracking-widest drop-shadow-md">BATTLE HUB</h1>
-            <span className="text-[10px] font-bold opacity-80 bg-black/20 px-1.5 py-0.5 rounded">v1.1.0</span>
+            <span className="text-[10px] font-bold opacity-80 bg-black/20 px-1.5 py-0.5 rounded">v1.1.1</span>
           </div>
         </div>
         <div className="flex items-center bg-white/20 rounded-lg px-2 py-1">
@@ -153,7 +153,7 @@ const App: React.FC = () => {
         </div>
       </header>
 
-      <main className="p-2 max-w-md mx-auto space-y-4">
+      <main className="p-2 max-w-md mx-auto space-y-4 flex flex-col justify-center min-h-[calc(100vh-80px)]">
         {/* ================= 相手陣セクション ================= */}
         <section>
           <h2 className="text-sm font-bold text-slate-500 mb-2 px-1">相手パーティ</h2>

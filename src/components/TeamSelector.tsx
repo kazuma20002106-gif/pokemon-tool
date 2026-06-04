@@ -102,37 +102,37 @@ export const TeamSelector: React.FC<TeamSelectorProps> = ({
             >
               <X className="w-4 h-4" />
             </button>
-          </div>
 
-          {searchQuery && filteredPokemon.length > 0 && (
-            <div className="bottom-[calc(100%-12px)] left-3 mb-2 bg-white border border-slate-200 rounded-xl shadow-lg max-h-48 overflow-y-auto absolute z-[100] w-[calc(100%-24px)] max-w-[400px]">
-              {filteredPokemon.map((p) => (
-                <button
-                  key={p.id}
-                  className="w-full text-left p-3 hover:bg-slate-50 border-b border-slate-100 last:border-0 flex justify-between items-center"
-                  onClick={() => {
-                    onAddPokemon(addingIndex, p);
-                    setAddingIndex(null);
-                    onSearchChange('');
-                  }}
-                >
-                  <div className="flex flex-col gap-1">
-                    <div className="flex items-center gap-2">
-                      <img 
-                        src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${p.id}.png`}
-                        alt=""
-                        className="w-8 h-8 object-contain"
-                      />
-                      <span className="font-bold text-slate-700">{p.name}</span>
+            {searchQuery && filteredPokemon.length > 0 && (
+              <div className="absolute bottom-[calc(100%+8px)] left-0 right-0 bg-white border border-slate-200 rounded-xl shadow-lg max-h-48 overflow-y-auto z-[100]">
+                {filteredPokemon.map((p) => (
+                  <button
+                    key={p.id}
+                    className="w-full text-left p-3 hover:bg-slate-50 border-b border-slate-100 last:border-0 flex justify-between items-center"
+                    onClick={() => {
+                      onAddPokemon(addingIndex, p);
+                      setAddingIndex(null);
+                      onSearchChange('');
+                    }}
+                  >
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center gap-2">
+                        <img 
+                          src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${p.id}.png`}
+                          alt=""
+                          className="w-8 h-8 object-contain"
+                        />
+                        <span className="font-bold text-slate-700">{p.name}</span>
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex gap-1">
-                    {p.types.map(t => <TypeBadge key={t} type={t} />)}
-                  </div>
-                </button>
-              ))}
-            </div>
-          )}
+                    <div className="flex gap-1">
+                      {p.types.map(t => <TypeBadge key={t} type={t} />)}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>
