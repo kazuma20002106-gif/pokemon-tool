@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Shield, Zap, Target, Activity, Heart, Swords, Info } from 'lucide-react';
+import { X, Shield, Zap, Target, Activity, Heart, Swords, Info, ChevronDown } from 'lucide-react';
 import movesData from '../data/moves.json';
 import learnsetsData from '../data/learnsets.json';
 import unimplementedMovesData from '../data/unimplemented_moves.json';
@@ -117,6 +117,7 @@ export const PokemonDetailModal: React.FC<Props> = ({ pokemon, onSave, onClose }
   const [moveSearchQuery, setMoveSearchQuery] = useState('');
   const [activeItemSearch, setActiveItemSearch] = useState(false);
   const [itemSearchQuery, setItemSearchQuery] = useState('');
+  const [activeNatureSelect, setActiveNatureSelect] = useState(false);
   const [showUnimplemented, setShowUnimplemented] = useState(false);
 
   const getFilteredMoves = (query: string) => {
@@ -197,13 +198,34 @@ export const PokemonDetailModal: React.FC<Props> = ({ pokemon, onSave, onClose }
             <div>
               <label className="block text-xs font-bold text-slate-500 mb-1">性格</label>
               <div className="flex items-center gap-1.5">
-                <select 
-                  value={nature} 
-                  onChange={e => setNature(e.target.value)}
-                  className="flex-1 w-full p-2 text-xs bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-indigo-400"
-                >
-                  {NATURES.map(n => <option key={n} value={n}>{n}</option>)}
-                </select>
+                <div className="relative flex-1">
+                  <button 
+                    onClick={() => setActiveNatureSelect(!activeNatureSelect)}
+                    className="w-full p-2 text-xs bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-indigo-400 text-left flex justify-between items-center"
+                  >
+                    <span className="truncate">{nature.split(' ')[0]}</span>
+                    <ChevronDown className="w-4 h-4 text-slate-400 flex-shrink-0 ml-1" />
+                  </button>
+                  {activeNatureSelect && (
+                    <>
+                      <div className="fixed inset-0 z-40" onClick={() => setActiveNatureSelect(false)} />
+                      <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-[0_10px_40px_-15px_rgba(0,0,0,0.3)] z-[100] max-h-48 overflow-y-auto">
+                        {NATURES.map(n => (
+                          <div 
+                            key={n}
+                            onClick={() => {
+                              setNature(n);
+                              setActiveNatureSelect(false);
+                            }}
+                            className={`p-2.5 text-xs border-b border-slate-50 cursor-pointer hover:bg-slate-50 ${nature === n ? 'bg-indigo-50 font-bold text-indigo-700' : 'text-slate-700'}`}
+                          >
+                            {n}
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
                 {nature.includes('↑') ? (
                   <div className="flex flex-col items-center justify-center bg-white border border-slate-200 rounded px-1.5 py-0.5 min-w-[36px]">
                     <span className="text-[9px] font-bold text-red-500 leading-tight">{nature.match(/\(([^ ]+)↑/)?.[1]}↑</span>
@@ -218,28 +240,43 @@ export const PokemonDetailModal: React.FC<Props> = ({ pokemon, onSave, onClose }
             </div>
             <div className="relative">
               <label className="block text-xs font-bold text-slate-500 mb-1">もちもの</label>
-              <input
-                value={activeItemSearch ? itemSearchQuery : item}
-                onChange={e => {
-                  setItemSearchQuery(e.target.value);
-                  if (!activeItemSearch) setActiveItemSearch(true);
-                }}
-                onFocus={() => {
-                  setActiveItemSearch(true);
-                  setItemSearchQuery(item === "なし" ? "" : item);
-                }}
-                onBlur={() => {
-                  setTimeout(() => {
-                    setActiveItemSearch(false);
-                    setItemSearchQuery(item);
-                  }, 200);
-                }}
-                className="w-full p-2 text-xs bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-indigo-400 placeholder:text-slate-400"
-                placeholder="検索..."
-              />
+              <div className="relative">
+                <input
+                  value={activeItemSearch ? itemSearchQuery : item}
+                  onChange={e => {
+                    setItemSearchQuery(e.target.value);
+                    if (!activeItemSearch) setActiveItemSearch(true);
+                  }}
+                  onFocus={(e) => {
+                    setActiveItemSearch(true);
+                    setItemSearchQuery(item === "なし" ? "" : item);
+                    e.target.select();
+                  }}
+                  onBlur={() => {
+                    setTimeout(() => {
+                      setActiveItemSearch(false);
+                      setItemSearchQuery(item);
+                    }, 200);
+                  }}
+                  className="w-full p-2 pr-7 text-xs bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-indigo-400 placeholder:text-slate-400"
+                  placeholder="検索..."
+                />
+                {activeItemSearch && itemSearchQuery && (
+                  <button
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      setItemSearchQuery('');
+                      setItem("なし");
+                    }}
+                    className="absolute right-2 top-2 p-0.5 text-slate-400 hover:text-slate-600 bg-slate-200 rounded-full z-10"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                )}
+              </div>
               {activeItemSearch && (
                 <div className="absolute bottom-full mb-1 left-0 z-[100] w-[150%] max-w-[240px] bg-slate-800 text-white rounded-xl shadow-2xl max-h-60 overflow-y-auto border border-slate-700">
-                  {ITEMS.filter(i => i.includes(itemSearchQuery)).map(i => (
+                  {ITEMS.filter(i => hiraToKata(i).includes(hiraToKata(itemSearchQuery))).map(i => (
                     <button
                       key={i}
                       className="w-full text-left px-3 py-2 text-xs hover:bg-slate-700 border-b border-slate-700/50 last:border-0"
@@ -252,7 +289,7 @@ export const PokemonDetailModal: React.FC<Props> = ({ pokemon, onSave, onClose }
                       {i}
                     </button>
                   ))}
-                  {ITEMS.filter(i => i.includes(itemSearchQuery)).length === 0 && (
+                  {ITEMS.filter(i => hiraToKata(i).includes(hiraToKata(itemSearchQuery))).length === 0 && (
                     <div className="p-3 text-center text-xs text-slate-400">見つかりません</div>
                   )}
                 </div>
@@ -294,9 +331,10 @@ export const PokemonDetailModal: React.FC<Props> = ({ pokemon, onSave, onClose }
                           setMoveSearchQuery(e.target.value);
                           if (!isActive) setActiveMoveIndex(index);
                         }}
-                        onFocus={() => {
+                        onFocus={(e) => {
                           setActiveMoveIndex(index);
                           setMoveSearchQuery(moves[index] || '');
+                          e.target.select();
                         }}
                         onBlur={() => {
                           setTimeout(() => {
@@ -313,11 +351,12 @@ export const PokemonDetailModal: React.FC<Props> = ({ pokemon, onSave, onClose }
                       )}
                       {moves[index] && (
                         <button 
-                          onClick={() => {
+                          onMouseDown={(e) => {
+                            e.preventDefault();
                             const newMoves = [...moves];
                             newMoves[index] = null;
                             setMoves(newMoves);
-                            if (isActive) setMoveSearchQuery('');
+                            setMoveSearchQuery('');
                           }}
                           className="absolute right-2 top-2.5 text-slate-400 hover:text-slate-600 p-0.5"
                         >
