@@ -137,7 +137,7 @@ const App: React.FC = () => {
           <Gamepad2 className="w-6 h-6" />
           <div className="flex items-baseline gap-2">
             <h1 className="text-lg font-black tracking-widest drop-shadow-md">BATTLE HUB</h1>
-            <span className="text-[10px] font-bold opacity-80 bg-black/20 px-1.5 py-0.5 rounded">v1.1.4</span>
+            <span className="text-[10px] font-bold opacity-80 bg-black/20 px-1.5 py-0.5 rounded">v1.1.5</span>
           </div>
         </div>
         <div className="flex items-center bg-white/20 rounded-lg px-2 py-1">
@@ -218,7 +218,7 @@ const App: React.FC = () => {
               } 
             />
           </div>
-          <div className="px-3 pb-3 flex overflow-x-auto gap-2 scrollbar-hide">
+          <div className="px-3 pb-2 flex overflow-x-auto gap-2 scrollbar-hide">
             {[
               { id: 'none', label: 'なし', icon: null, colorClass: 'bg-slate-500 border-slate-600 text-white' },
               { id: 'sun', label: '晴れ', icon: <Sun className="w-3.5 h-3.5" />, colorClass: 'bg-orange-500 border-orange-600 text-white' },
@@ -239,6 +239,14 @@ const App: React.FC = () => {
               </button>
             ))}
           </div>
+          {weather !== 'none' && (
+            <div className="px-3 pb-2 text-[10px] text-slate-500 font-bold border-t border-slate-100 pt-2 bg-slate-50 rounded-b-xl">
+              {weather === 'sun' && '炎タイプの技の威力が1.5倍、水タイプの技の威力が0.5倍になります。'}
+              {weather === 'rain' && '水タイプの技の威力が1.5倍、炎タイプの技の威力が0.5倍になります。'}
+              {weather === 'sandstorm' && '岩タイプのポケモンの特防が1.5倍になります。'}
+              {weather === 'snow' && '氷タイプのポケモンの防御が1.5倍になります。'}
+            </div>
+          )}
         </section>
 
         {/* ================= ダメージ計算 ================= */}

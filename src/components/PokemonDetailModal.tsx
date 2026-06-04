@@ -202,7 +202,7 @@ export const PokemonDetailModal: React.FC<Props> = ({ pokemon, onSave, onClose }
                   onChange={e => setNature(e.target.value)}
                   className="flex-1 w-full p-2 text-xs bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-indigo-400"
                 >
-                  {NATURES.map(n => <option key={n} value={n}>{n.split(' ')[0]}</option>)}
+                  {NATURES.map(n => <option key={n} value={n}>{n}</option>)}
                 </select>
                 {nature.includes('↑') ? (
                   <div className="flex flex-col items-center justify-center bg-white border border-slate-200 rounded px-1.5 py-0.5 min-w-[36px]">

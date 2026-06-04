@@ -1,5 +1,5 @@
 import React from 'react';
-import { Zap } from 'lucide-react';
+import { Zap, Settings2 } from 'lucide-react';
 import megaIds from '../data/megaIds.json';
 import { MyPokemon, Pokemon } from './PokemonDetailModal';
 import { BattleStatRanks } from '../App';
@@ -88,8 +88,9 @@ export const BattlePokemonCard: React.FC<BattlePokemonCardProps> = ({
           <div>
             <div className="flex items-center gap-2">
               <h3 className="font-black text-sm text-slate-800">{basePokemonData.name}</h3>
-              <button onClick={onEdit} className="text-[9px] font-bold bg-slate-100 hover:bg-slate-200 text-slate-600 px-2 py-1 rounded shadow-sm border border-slate-200">
-                ステータス・技を変更
+              <button onClick={onEdit} className="text-[10px] font-bold text-white bg-gradient-to-r from-indigo-500 to-fuchsia-500 hover:from-indigo-600 hover:to-fuchsia-600 px-2.5 py-1 rounded-md shadow-sm transition-all flex items-center shadow-indigo-200">
+                <Settings2 className="w-3 h-3 mr-1" />
+                設定を変更
               </button>
             </div>
             <div className="flex gap-1 mt-1">
@@ -109,12 +110,12 @@ export const BattlePokemonCard: React.FC<BattlePokemonCardProps> = ({
       </div>
 
       <div className="grid grid-cols-2 gap-x-4 gap-y-1 mb-2 bg-white/50 p-2 rounded-lg">
-        <StatBar label="H" value={basePokemonData.stats.hp} max={255} />
-        <StatBar label="A" value={basePokemonData.stats.attack} max={200} />
-        <StatBar label="B" value={basePokemonData.stats.defense} max={200} />
-        <StatBar label="C" value={basePokemonData.stats.spAttack} max={200} />
-        <StatBar label="D" value={basePokemonData.stats.spDefense} max={200} />
-        <StatBar label="S" value={basePokemonData.stats.speed} max={200} />
+        <StatBar label="HP" value={basePokemonData.stats.hp} max={255} />
+        <StatBar label="攻撃" value={basePokemonData.stats.attack} max={200} />
+        <StatBar label="防御" value={basePokemonData.stats.defense} max={200} />
+        <StatBar label="特攻" value={basePokemonData.stats.spAttack} max={200} />
+        <StatBar label="特防" value={basePokemonData.stats.spDefense} max={200} />
+        <StatBar label="素早" value={basePokemonData.stats.speed} max={200} />
       </div>
 
       <div className="grid grid-cols-5 gap-1">
