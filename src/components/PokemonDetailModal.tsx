@@ -73,11 +73,17 @@ export interface MyPokemon {
 }
 
 export const NATURES = [
-  "いじっぱり (攻↑ 特攻↓)", "やんちゃ (攻↑ 特防↓)", "ゆうかん (攻↑ 速↓)", "さみしがり (攻↑ 防↓)",
-  "ひかえめ (特攻↑ 攻↓)", "おっとり (特攻↑ 防↓)", "れいせい (特攻↑ 速↓)", "うっかりや (特攻↑ 特防↓)",
+  // 攻撃↑
+  "いじっぱり (攻↑ 特攻↓)", "さみしがり (攻↑ 防↓)", "やんちゃ (攻↑ 特防↓)", "ゆうかん (攻↑ 速↓)",
+  // 防御↑
+  "ずぶとい (防↑ 攻↓)", "わんぱく (防↑ 特攻↓)", "のうてんき (防↑ 特防↓)", "のんき (防↑ 速↓)",
+  // 特攻↑
+  "ひかえめ (特攻↑ 攻↓)", "おっとり (特攻↑ 防↓)", "うっかりや (特攻↑ 特防↓)", "れいせい (特攻↑ 速↓)",
+  // 特防↑
+  "おだやか (特防↑ 攻↓)", "おとなしい (特防↑ 防↓)", "しんちょう (特防↑ 特攻↓)", "なまいき (特防↑ 速↓)",
+  // 素早さ↑
   "おくびょう (速↑ 攻↓)", "せっかち (速↑ 防↓)", "ようき (速↑ 特攻↓)", "むじゃき (速↑ 特防↓)",
-  "ずぶとい (防↑ 攻↓)", "のんき (防↑ 速↓)", "わんぱく (防↑ 特攻↓)", "のうてんき (防↑ 特防↓)",
-  "おだやか (特防↑ 攻↓)", "おとなしい (特防↑ 防↓)", "なまいき (特防↑ 速↓)", "しんちょう (特防↑ 特攻↓)",
+  // 補正なし
   "てれや (補正なし)", "がんばりや (補正なし)", "すなお (補正なし)", "きまぐれ (補正なし)", "まじめ (補正なし)"
 ];
 
@@ -189,7 +195,17 @@ export const PokemonDetailModal: React.FC<Props> = ({ pokemon, onSave, onClose }
               </select>
             </div>
             <div>
-              <label className="block text-xs font-bold text-slate-500 mb-1">性格</label>
+              <label className="flex items-center justify-between text-xs font-bold text-slate-500 mb-1">
+                <span>性格</span>
+                {nature.includes('↑') ? (
+                  <span className="text-[10px] font-normal scale-90 origin-right whitespace-nowrap">
+                    <span className="text-red-500">{nature.match(/\((.+)↑/)?.[1]}↑</span>
+                    <span className="text-blue-500 ml-1">{nature.match(/ (.+)↓\)/)?.[1]}↓</span>
+                  </span>
+                ) : (
+                  <span className="text-[10px] font-normal scale-90 origin-right text-slate-400">補正なし</span>
+                )}
+              </label>
               <select 
                 value={nature} 
                 onChange={e => setNature(e.target.value)}
