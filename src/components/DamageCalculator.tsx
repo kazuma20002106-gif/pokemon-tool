@@ -177,13 +177,18 @@ export const DamageCalculator: React.FC<Props> = ({
         myPoke.ability || 'なし',
         weather
       );
+      
+      let itemNote = '';
+      if (myPoke.item === 'こだわりスカーフ') itemNote = ' / スカーフ';
+      else if (myPoke.item && (myPoke.item === 'くろいてっきゅう' || myPoke.item.includes('パワー') || myPoke.item === 'きょうせいギプス')) itemNote = ' / 鉄球系';
+
       speedList.push({
         id: `my-${i}`,
         name: myPoke.base.name,
         speed,
         isOpponent: false,
         pokemon: myPoke,
-        details: `(努力値${myPoke.evs.speed})`,
+        details: `(努力値${myPoke.evs.speed}${itemNote})`,
         isFaceoff: i === activeMyFaceoffIndex
       });
     });
@@ -408,7 +413,7 @@ export const DamageCalculator: React.FC<Props> = ({
             {speedList.length === 0 ? (
               <div className="py-8 text-center text-xs text-slate-400">自陣と相手のポケモンを登録すると、素早さの比較が表示されます。</div>
             ) : (
-            <div className="space-y-1.5 max-h-[600px] overflow-y-auto pr-2 pb-10">
+            <div className="space-y-1.5 max-h-[350px] md:max-h-[500px] overflow-y-auto pr-2 pb-10">
               {speedList.map((entry: any) => (
                 <div 
                   key={entry.id}
