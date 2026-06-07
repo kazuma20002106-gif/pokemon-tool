@@ -268,6 +268,7 @@ export const DamageCalculator: React.FC<Props> = ({ myTeam, activePokemonIndices
         )}
         
         {/* モード固有のオプション設定 */}
+        {viewMode === 'damage' && (
         <div className="flex justify-end gap-2 mt-1">
           {worstCaseMode ? (
             <button
@@ -299,8 +300,59 @@ export const DamageCalculator: React.FC<Props> = ({ myTeam, activePokemonIndices
             </div>
           )}
         </div>
+        )}
       </div>
       <div className="p-3 space-y-4">
+        {viewMode === 'speed' ? (
+          <div className="space-y-1">
+            <div className="flex px-3 py-2 text-[10px] font-bold text-slate-500 border-b border-slate-200">
+              <div className="flex-1">ポケモン</div>
+              <div className="w-16 text-right">実数値</div>
+            </div>
+            {speedList.length === 0 ? (
+              <div className="py-8 text-center text-xs text-slate-400">自陣と相手のポケモンを登録すると、素早さの比較が表示されます。</div>
+            ) : (
+            <div className="space-y-1.5 max-h-[600px] overflow-y-auto pr-2 pb-10">
+              {speedList.map((entry: any) => (
+                <div 
+                  key={entry.id}
+                  className={`flex items-center px-3 py-2.5 rounded-lg border transition-all ${
+                    entry.isOpponent 
+                      ? 'bg-rose-50 border-rose-200' 
+                      : 'bg-indigo-50 border-indigo-200'
+                  }`}
+                >
+                  <div className="flex-1 flex items-center gap-2">
+                    <img 
+                      src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${entry.pokemon.base.id}.png`}
+                      className="w-10 h-10 object-contain drop-shadow-sm"
+                      alt=""
+                    />
+                    <div className="flex flex-col">
+                      <span className={`font-bold text-[13px] ${
+                        entry.isOpponent ? 'text-rose-700' : 'text-indigo-700'
+                      }`}>
+                        {entry.name}
+                      </span>
+                      <span className={`text-[10px] font-bold ${
+                        entry.isOpponent ? 'text-rose-400' : 'text-indigo-400'
+                      }`}>
+                        {entry.isOpponent ? `相手 ${entry.details}` : `自陣 ${entry.details}`}
+                      </span>
+                    </div>
+                  </div>
+                  <div className={`w-20 text-right font-black text-xl tracking-tight ${
+                    entry.isOpponent ? 'text-rose-600' : 'text-indigo-600'
+                  }`}>
+                    {entry.speed}
+                  </div>
+                </div>
+              ))}
+            </div>
+            )}
+          </div>
+        ) : (
+        <>
         <div className="flex justify-between items-end mb-3">
           <h4 className="text-sm font-bold text-slate-700">与ダメージ計算</h4>
           <span className="text-[10px] text-slate-500 font-medium bg-white px-2 py-1 rounded-md border border-slate-200">
@@ -550,6 +602,8 @@ export const DamageCalculator: React.FC<Props> = ({ myTeam, activePokemonIndices
           );
         })}
       </div>
+        </>
+        )}
       </div>
     </div>
   );
