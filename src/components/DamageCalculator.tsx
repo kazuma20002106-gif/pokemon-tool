@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { MyPokemon } from './PokemonDetailModal';
 import { calculateDamage, getEffectiveness } from '../utils/damageCalc';
-import { calculateStat, getNatureMultiplier, applyStatRank } from '../utils/statsCalc';
+import { calculateStat, getNatureMultiplier, applyStatRank, calculateActualSpeed } from '../utils/statsCalc';
 import movesData from '../data/moves.json';
-import { Info, ShieldAlert, Swords } from 'lucide-react';
+import { Info, ShieldAlert, Swords, Zap } from 'lucide-react';
 import { BattleStatRanks } from '../App';
 
 interface Props {
@@ -122,6 +122,8 @@ export const DamageCalculator: React.FC<Props> = ({ myTeam, activePokemonIndices
   const [worstCaseMode, setWorstCaseMode] = useState(false);
   const [baseAssumption, setBaseAssumption] = useState<'h0' | 'h252'>('h252');
   const [worstCaseItem, setWorstCaseItem] = useState(true);
+  const [viewMode, setViewMode] = useState<'speed' | 'damage'>('speed');
+  const [oppScarfAssumption, setOppScarfAssumption] = useState(false);
 
   // 相手のHP（最悪想定 または H252指定の場合は252振り、それ以外は0振り）
   const oppHpEv = worstCaseMode || baseAssumption === 'h252' ? 252 : 0;
@@ -144,27 +146,126 @@ export const DamageCalculator: React.FC<Props> = ({ myTeam, activePokemonIndices
   const specialAbilities = ["ばけのかわ", "マルチスケイル", "ファントムガード", "アイスフェイス"];
   const oppSpecialAbility = specialAbilities.includes(oppActiveAbility) ? oppActiveAbility : null;
 
+  // 素早さ比較リストの生成
+  const speedList: any[] = [];
+  
+  if (viewMode === 'speed') {
+    teamWithMoves.forEach((myPoke, i) => {
+      const myRank = myBattleRanks[activePokemonIndices[i]]?.speed || 0;
+      const speed = calculateActualSpeed(
+        myPoke.base.stats.speed,
+        31,
+        myPoke.evs.speed,
+        getNatureMultiplier(myPoke.nature, 'speed'),
+        myRank,
+        myPoke.item || 'なし',
+        myPoke.ability || 'なし',
+        weather
+      );
+      speedList.push({
+        id: `my-${i}`,
+        name: myPoke.base.name,
+        speed,
+        isOpponent: false,
+        pokemon: myPoke,
+        details: `(努力値${myPoke.evs.speed})`
+      });
+    });
+
+    const oppBaseSpeed = opponent.base.stats.speed;
+    const oppRank = oppRanks.speed || 0;
+    const oppItem = oppScarfAssumption ? 'こだわりスカーフ' : (opponent.item || 'なし');
+    const oppAbility = opponent.ability || 'なし';
+
+    const oppMaxPlus = calculateActualSpeed(oppBaseSpeed, 31, 252, 1.1, oppRank, oppItem, oppAbility, weather);
+    const oppMax = calculateActualSpeed(oppBaseSpeed, 31, 252, 1.0, oppRank, oppItem, oppAbility, weather);
+    const oppMin = calculateActualSpeed(oppBaseSpeed, 31, 0, 1.0, oppRank, oppItem, oppAbility, weather);
+
+    speedList.push({
+      id: 'opp-max-plus',
+      name: `${opponent.base.name}`,
+      speed: oppMaxPlus,
+      isOpponent: true,
+      pokemon: opponent,
+      details: '(最速)'
+    });
+    speedList.push({
+      id: 'opp-max',
+      name: `${opponent.base.name}`,
+      speed: oppMax,
+      isOpponent: true,
+      pokemon: opponent,
+      details: '(準速)'
+    });
+    speedList.push({
+      id: 'opp-min',
+      name: `${opponent.base.name}`,
+      speed: oppMin,
+      isOpponent: true,
+      pokemon: opponent,
+      details: '(無振り)'
+    });
+
+    speedList.sort((a, b) => b.speed - a.speed);
+  }
+
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-slate-200 mt-4">
       <div className="bg-slate-100 p-3 border-b border-slate-200 flex flex-col gap-2 rounded-t-2xl">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center text-slate-700">
-            <Swords className="w-5 h-5 mr-2" />
-            <h2 className="font-bold">ダメージ計算</h2>
-          </div>
-          <div className="flex items-center gap-1">
+        <div className="flex items-center justify-between mb-1">
+          <div className="flex bg-slate-200 rounded-lg p-1 shadow-inner w-full max-w-sm">
             <button
-              onClick={() => setWorstCaseMode(!worstCaseMode)}
-            className={`flex items-center px-2 py-1.5 rounded text-[10px] font-bold transition-all shadow-sm ${
-               worstCaseMode ? 'bg-red-500 text-white shadow-md border border-red-600' : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200'
-            }`}
-          >
-            <ShieldAlert className={`w-3 h-3 mr-1 ${worstCaseMode ? 'text-white' : 'text-slate-400'}`} />
-            {worstCaseMode ? '最悪想定: ON' : '最悪想定: OFF'}
+              onClick={() => setViewMode('speed')}
+              className={`flex-1 flex justify-center items-center px-4 py-1.5 rounded-md text-xs font-bold transition-all ${
+                viewMode === 'speed' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+              }`}
+            >
+              <Zap className="w-4 h-4 mr-1.5" />
+              素早さ比較
             </button>
-            <TooltipHelp align="right" text="相手の攻撃に対して、考えられる最も硬いステータス（HP・防御/特防特化、および突撃チョッキなどの補正）を想定して計算します。下のボタンで相手の道具補正をオンオフできます。" />
+            <button
+              onClick={() => setViewMode('damage')}
+              className={`flex-1 flex justify-center items-center px-4 py-1.5 rounded-md text-xs font-bold transition-all ${
+                viewMode === 'damage' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+              }`}
+            >
+              <Swords className="w-4 h-4 mr-1.5" />
+              ダメージ計算
+            </button>
           </div>
         </div>
+        
+        {viewMode === 'damage' ? (
+          <div className="flex items-center justify-between">
+            <h2 className="font-bold text-slate-700 flex items-center"><Swords className="w-5 h-5 mr-2" />ダメージ計算</h2>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setWorstCaseMode(!worstCaseMode)}
+              className={`flex items-center px-2 py-1.5 rounded text-[10px] font-bold transition-all shadow-sm ${
+                 worstCaseMode ? 'bg-red-500 text-white shadow-md border border-red-600' : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200'
+              }`}
+            >
+              <ShieldAlert className={`w-3 h-3 mr-1 ${worstCaseMode ? 'text-white' : 'text-slate-400'}`} />
+              {worstCaseMode ? '最悪想定: ON' : '最悪想定: OFF'}
+              </button>
+              <TooltipHelp align="right" text="相手の攻撃に対して、考えられる最も硬いステータス（HP・防御/特防特化、および突撃チョッキなどの補正）を想定して計算します。下のボタンで相手の道具補正をオンオフできます。" />
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-center justify-between">
+            <h2 className="font-bold text-slate-700 flex items-center"><Zap className="w-5 h-5 mr-2" />素早さ比較</h2>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setOppScarfAssumption(!oppScarfAssumption)}
+                className={`flex items-center px-2 py-1.5 rounded text-[10px] font-bold transition-all shadow-sm ${
+                  oppScarfAssumption ? 'bg-sky-500 text-white shadow-md border border-sky-600' : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200'
+                }`}
+              >
+                相手スカーフ想定: {oppScarfAssumption ? 'ON' : 'OFF'}
+              </button>
+            </div>
+          </div>
+        )}
         
         {/* モード固有のオプション設定 */}
         <div className="flex justify-end gap-2 mt-1">
